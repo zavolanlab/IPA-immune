@@ -1,0 +1,9 @@
+name: ipa-immune
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - nextflow
+  - pip>=20.2.3
+  - python>=3.6, <=3.12
+  - singularity
