@@ -8,10 +8,6 @@ nextflow.enable.dsl = 2
  * given `params.foo` specify on the run command line `--foo some_value`.
  */
 
-
-params.outdir = "results"
-
-
 log.info """\
  IPA-IMMUNE - N F   P I P E L I N E
  ===================================
