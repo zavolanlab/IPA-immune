@@ -3,6 +3,7 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
+  - python==3.6.2
   - nextflow
   - pip>=20.2.3
-  - python>=3.6, <=3.12
+  - bedtools==2.26.0
