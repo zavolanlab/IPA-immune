@@ -164,4 +164,3 @@ cython_debug/
 work
 results/*
 data/*
-tests/*
