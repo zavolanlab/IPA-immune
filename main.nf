@@ -23,6 +23,7 @@ include { TECTOOL } from './modules/tectool.nf'
 
 
 // Define inputs
+bai_ch = Channel.fromPath( params.sample_bai )
 sample_ch = Channel.fromPath( params.sample_bam )
 annotation_ch = Channel.fromPath( params.annotation_gtf )
 polya_ch = Channel.value( params.polya_sites_bed )
@@ -32,7 +33,7 @@ genome_ch = Channel.value( params.genome_fa )
  * main script flow
  */
 workflow {
-    TECTOOL( sample_ch, annotation_ch, polya_ch, genome_ch )
+    TECTOOL( bai_ch, sample_ch, annotation_ch, polya_ch, genome_ch )
     }
 
 /* 

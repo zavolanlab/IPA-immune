@@ -6,7 +6,8 @@ process TECTOOL {
     publishDir "${projectDir}", mode:'copy'
 
     input:
-    
+
+    path sample_bai
     path sample_bam
     path annotation_gtf
     path polya_sites_bed
@@ -14,6 +15,7 @@ process TECTOOL {
 
     script:
     """
+    echo $sample_bai;
     tectool \\
         --annotation $annotation_gtf \\
         --polyasites $polya_sites_bed \\
