@@ -2,8 +2,14 @@ name: ipa-immune
 channels:
   - conda-forge
   - bioconda
+  # - fgypas
 dependencies:
   - python==3.6.2
   - nextflow
   - pip>=20.2.3
   - bedtools==2.26.0
+  # - tectool
+  # - singularity
+  # - samtools
+  # - stringtie
+  # - salmon
