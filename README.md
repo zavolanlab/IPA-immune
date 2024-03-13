@@ -32,9 +32,10 @@ mamba env create -f install/environment.yml
 
 ### 4. Activate environment
 
-Activate the Conda environment with:
+Update und activate the Conda environment with:
 
 ```bash
+mamba env update -f install/environment-update.yml
 conda activate ipa-immune
 ```
 
