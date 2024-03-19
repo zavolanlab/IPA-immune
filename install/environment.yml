@@ -10,6 +10,7 @@ dependencies:
   - samtools=1.18
   - stringtie=2.2.1
   - salmon=1.10.2
+  - star=2.7.8a
   # - singularity
-  - pip:
-    - git+https://github.com/zavolanlab/TECtool@master
+  # - pip:
+  #   - git+https://github.com/zavolanlab/TECtool@master
