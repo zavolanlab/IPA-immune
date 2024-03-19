@@ -1,12 +1,16 @@
+#!/usr/bin/env nextflow
+
+nextflow.enable.dsl=2
+
 process TECTOOL {
     label "TECtool"
     container "docker://fgypas/tectool:0.4"
 
-    beforeScript 'export SINGULARITY_BIND="$PWD/tests/test_data"'
-    publishDir "${projectDir}", mode:'copy'
+    publishDir "${params.out_dir}", mode: 'copy', pattern: "*"
 
     input:
-    
+
+    path index_bai
     path sample_bam
     path annotation_gtf
     path polya_sites_bed
@@ -14,11 +18,12 @@ process TECTOOL {
 
     script:
     """
-    tectool \\
-        --annotation $annotation_gtf \\
-        --polyasites $polya_sites_bed \\
-        --bam $sample_bam \\
-        --genome $genome_fa \\
-        --output_dir $params.outdir
+    tectool \
+        --annotation ${annotation_gtf} \
+        --polyasites ${polya_sites_bed} \
+        --bam ${sample_bam} \
+        --genome ${genome_fa} \
+        --output_dir ${params.out_dir} \
+        --verbose
     """
 }

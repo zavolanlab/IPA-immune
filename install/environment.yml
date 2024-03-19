@@ -3,7 +3,14 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - python==3.6.2
-  - nextflow
+  - python=3.6.15
+  - nextflow=23.10.1
   - pip>=20.2.3
-  - bedtools==2.26.0
+  - bedtools=2.26.0
+  - samtools=1.18
+  - stringtie=2.2.1
+  - salmon=1.10.2
+  - star=2.7.8a
+  # - singularity
+  # - pip:
+  #   - git+https://github.com/zavolanlab/TECtool@master
