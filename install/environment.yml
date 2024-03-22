@@ -12,5 +12,5 @@ dependencies:
   - salmon=1.10.2
   - star=2.7.8a
   # - singularity
-  # - pip:
-  #   - git+https://github.com/zavolanlab/TECtool@master
+  - pip:
+    - git+https://github.com/balajtimate/TECtool@update_requirements
