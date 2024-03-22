@@ -2,7 +2,35 @@
 
 nextflow.enable.dsl=2
 
-process MAP_STAR {
+process STAR_INDEX_GENOME {
+
+    label 'star'
+	label 'indexing'
+
+    publishDir "${params.out_dir}/star_index_genome", mode: 'copy', pattern: 'starIndex'
+    publishDir "${params.log_dir}", mode: 'copy', pattern: '*.log'
+
+    input:
+    path sequence
+
+    output:
+    path 'starIndex', emit: index
+	path '*.log', emit: log
+
+    script:
+    """
+    mkdir starIndex
+
+    STAR --runThreadN ${params.star_threads} \
+    	--runMode genomeGenerate \
+        --genomeDir starIndex \
+        --genomeFastaFiles ${sequence} \
+		&> star_index_genome.log
+
+    """
+}
+
+process STAR_ALIGN_PE {
 
     label "star"
 	label "mapping"
@@ -16,7 +44,8 @@ process MAP_STAR {
     publishDir "${params.log_dir}", mode: 'copy', pattern: '*.out'
 
     input:
-    each(path(reads))
+    path input_fastq_1
+    path input_fastq_2
     path index
 
     output:
@@ -28,53 +57,26 @@ process MAP_STAR {
 
     script:
     """
-    for VAR in ${reads}
-    do
+    prefix=\$(echo "${input_fastq_1}" | sed 's/\\(\\.fastq\\.gz\\)*\$//') 
 
-        input=\$(basename \$VAR)
-        prefix=\$(echo "\$input" | sed 's/\\(\\.fastq\\.gz\\)*\$//') 
-
-        STAR --runMode alignReads \
-            --runThreadN ${params.star_threads} \
-            --genomeDir ${index} \
-            --genomeLoad NoSharedMemory \
-            --readFilesIn \$VAR \
-            --limitOutSJcollapsed 5000000 \
-            --outFileNamePrefix \$prefix. \
-            --readFilesCommand zcat \
-            --outReadsUnmapped Fastx \
-            --outSAMtype BAM   SortedByCoordinate \
-            --outSAMattributes All \
-            --outBAMsortingThreadN 8 \
-            --outSAMattrIHstart 0 \
-            --outFilterType BySJout \
-            --outFilterMultimapNmax 500000000 \
-            --alignEndsType Local \
-            --twopassMode None
-            &> \${prefix}_map_star.log
-
-    done
-
+    STAR --runMode alignReads \
+        --runThreadN ${params.star_threads} \
+        --genomeDir ${index} \
+        --genomeLoad NoSharedMemory \
+        --readFilesIn ${input_fastq_1} ${input_fastq_2} \
+        --limitOutSJcollapsed 5000000 \
+        --outFileNamePrefix \${prefix}. \
+        --readFilesCommand zcat \
+        --outReadsUnmapped Fastx \
+        --outSAMtype BAM   SortedByCoordinate \
+        --outSAMattributes All \
+        --outBAMsortingThreadN 8 \
+        --outSAMattrIHstart 0 \
+        --outFilterType BySJout \
+        --outFilterMultimapNmax 500000000 \
+        --alignEndsType Local \
+        --twopassMode None
+        &> \${prefix}_map_star.log
     """
 
-}
-
-process INDEX_SAMTOOLS {
-
-    label "samtools"
-
-    debug true
-
-	publishDir "${params.out_dir}", mode: 'copy', pattern: "*.bai"
-
-    input:
-    path bam
-
-    output:
-    path '*.bai', emit: bai
-
-    script:
-    """
-    samtools index -M ${bam}
-    """
 }
