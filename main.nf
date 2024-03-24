@@ -35,14 +35,14 @@ include { TECTOOL } from './modules/tectool.nf'
  * main script flow
  */
 workflow {
-    // STAR_INDEX_GENOME(
-    //     params.genome_fa
-    // )
-    // genome_index = STAR_INDEX_GENOME.out.index
+    STAR_INDEX_GENOME(
+        params.genome_fa
+    )
+    genome_index = STAR_INDEX_GENOME.out.index
     STAR_ALIGN_PE(
         params.input_fastq_1,
         params.input_fastq_2,
-        params.star_genome_dir
+        genome_index
      )
     star_mapped_bam = STAR_ALIGN_PE.out.aligned
     SAMTOOLS_GET_UNIQUE_MAPPERS(
