@@ -11,6 +11,7 @@ dependencies:
   - stringtie=2.2.1
   - salmon=1.10.2
   - star=2.7.8a
+  - pybedtools
   # - singularity
   - pip:
     - git+https://github.com/balajtimate/TECtool@update_requirements
