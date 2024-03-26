@@ -10,8 +10,8 @@ process TECTOOL {
 
     input:
 
-    path index_bai
-    path sample_bam
+    tuple val(library), path(index)
+    tuple val(library), path(bam)
     path annotation_gtf
     path polya_sites_bed
     path genome_fa
@@ -21,7 +21,7 @@ process TECTOOL {
     tectool \
         --annotation ${annotation_gtf} \
         --polyasites ${polya_sites_bed} \
-        --bam ${sample_bam} \
+        --bam ${bam} \
         --genome ${genome_fa} \
         --output_dir ${params.out_dir} \
         --verbose

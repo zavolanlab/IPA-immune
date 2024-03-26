@@ -11,7 +11,7 @@ nextflow.enable.dsl = 2
 log.info """\
  IPA-IMMUNE - N F   P I P E L I N E
  ===================================
- samples: ${params.input_fastq_1}, ${params.input_fastq_2}
+ samples: ${params.input_fastq}
  annotation GTF: ${params.annotation_gtf}
  polyA sites BED: ${params.polya_sites_bed}
  genome FASTA: ${params.genome_fa}
@@ -21,76 +21,78 @@ log.info """\
 // import modules
 // include { STAR_INDEX_GENOME } from './modules/alignment.nf'
 include { STAR_ALIGN_PE } from './modules/alignment.nf'
-include { STAR_ALIGN_SE } from './modules/alignment.nf'
+include { STAR_ALIGN_SE as ALIGN_FASTQ_1 } from './modules/alignment.nf'
+include { STAR_ALIGN_SE as ALIGN_FASTQ_2 } from './modules/alignment.nf'
 
-include { SAMTOOLS_INDEX } from './modules/samtools.nf'
+include { SAMTOOLS_INDEX as INDEX_BAM1 } from './modules/samtools.nf'
+include { SAMTOOLS_INDEX as INDEX_BAM2 } from './modules/samtools.nf'
 include { SAMTOOLS_GET_UNIQUE_MAPPERS } from './modules/samtools.nf'
 include { SAMTOOLS_GET_LOW_DUP_READS } from './modules/samtools.nf'
-include { SAMTOOLS_FASTQ } from './modules/samtools.nf'
+include { SAMTOOLS_BAM2FASTQ } from './modules/samtools.nf'
 
-include { TECTOOL } from './modules/tectool.nf'
+include { TECTOOL as TECTOOL1 } from './modules/tectool.nf'
+include { TECTOOL as TECTOOL2 } from './modules/tectool.nf'
 
+input_fastq_ch = Channel.fromFilePairs(params.input_fastq)
+genome_index_ch = channel.fromPath(params.genome_index)
 
 /* 
  * main script flow
  */
 workflow {
-    STAR_INDEX_GENOME(
-        params.genome_fa
-    )
-    genome_index = STAR_INDEX_GENOME.out.index
+    // STAR_INDEX_GENOME(
+    //     params.genome_fa
+    // )
+    // genome_index = STAR_INDEX_GENOME.out.index
     STAR_ALIGN_PE(
-        params.input_fastq_1,
-        params.input_fastq_2,
-        genome_index
-     )
-    star_mapped_bam = STAR_ALIGN_PE.out.aligned
+        input_fastq_ch,
+        genome_index_ch
+    )
+    star_mapped_bam_tuple = STAR_ALIGN_PE.out.star_mapped_bam_tuple
     SAMTOOLS_GET_UNIQUE_MAPPERS(
-        star_mapped_bam
+        star_mapped_bam_tuple
     )
-    filtered_bam = SAMTOOLS_GET_UNIQUE_MAPPERS.out.filtered_bam
+    filtered_bam_tuple = SAMTOOLS_GET_UNIQUE_MAPPERS.out.filtered_bam_tuple
     SAMTOOLS_GET_LOW_DUP_READS(
-        filtered_bam
+        filtered_bam_tuple
     )
-    bam_low_dupl = SAMTOOLS_GET_LOW_DUP_READS.out.bam_low_dupl
-    SAMTOOLS_INDEX(
-        bam_low_dupl
+    bam_low_dupl_tupl = SAMTOOLS_GET_LOW_DUP_READS.out.bam_low_dupl_tupl
+    
+    // Convert BAM to 2 FASTQ file     
+    SAMTOOLS_BAM2FASTQ(bam_low_dupl_tupl)
+    fastq1_tuple = SAMTOOLS_BAM2FASTQ.out.fastq1_tuple
+    fastq2_tuple = SAMTOOLS_BAM2FASTQ.out.fastq2_tuple
+    
+    // FASTQ1 from BAM
+    ALIGN_FASTQ_1(
+        fastq1_tuple,
+        genome_index_ch
     )
-    bam_low_dupl_index = SAMTOOLS_INDEX.out.bai
-    SAMTOOLS_FASTQ(
-        bam_low_dupl
+    star_mapped_bam_1 = ALIGN_FASTQ_1.out.star_mapped_bam
+    INDEX_BAM1(
+        star_mapped_bam_1
     )
-    1_fastq = SAMTOOLS_FASTQ.out.1_fastq
-    2_fastq = SAMTOOLS_FASTQ.out.2_fastq
-    // Combine these two into channels
-    STAR_ALIGN_SE(
-        1_fastq,
-        params.star_genome_dir
-    )
-    1_star_mapped_bam = STAR_ALIGN_PE.out.aligned
-    SAMTOOLS_INDEX(
-        1_star_mapped_bam
-    )
-    1_star_mapped_bam_index = SAMTOOLS_INDEX.out.bai
-        STAR_ALIGN_SE(
-        2_fastq,
-        params.star_genome_dir
-    )
-    2_star_mapped_bam = STAR_ALIGN_PE.out.aligned
-    SAMTOOLS_INDEX(
-        2_star_mapped_bam
-    )
-    2_star_mapped_bam_index = SAMTOOLS_INDEX.out.bai
-    TECTOOL(
-        1_star_mapped_bam_index,
-        1_star_mapped_bam,
+    star_mapped_bam_index_1 = INDEX_BAM1.out.index
+    TECTOOL1(
+        star_mapped_bam_index_1,
+        star_mapped_bam_1,
         params.annotation_gtf, 
         params.polya_sites_bed,
         params.genome_fa
     )
-    TECTOOL(
-        2_star_mapped_bam_index,
-        2_star_mapped_bam,
+    // FASTQ2 from BAM
+    ALIGN_FASTQ_2(
+        fastq2_tuple,
+        genome_index_ch
+    )
+    star_mapped_bam_2 = ALIGN_FASTQ_2.out.star_mapped_bam
+    INDEX_BAM2(
+        star_mapped_bam_2
+    )
+    star_mapped_bam_index_2 = INDEX_BAM2.out.index
+    TECTOOL2(
+        star_mapped_bam_index_2,
+        star_mapped_bam_2,
         params.annotation_gtf, 
         params.polya_sites_bed,
         params.genome_fa
@@ -101,5 +103,5 @@ workflow {
  * completion handler
  */
 workflow.onComplete {
-	log.info ( workflow.success ? "\nDone!" : "Oops .. something went wrong" )
+    log.info ( workflow.success ? "\nDone!" : "Oops .. something went wrong" )
 }
