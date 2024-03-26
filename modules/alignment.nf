@@ -7,9 +7,7 @@ process STAR_INDEX_GENOME {
     label 'star'
     label 'indexing'
     
-    debug true
-
-    publishDir "${params.out_dir}/star_index_genome", mode: 'copy', pattern: 'starIndex'
+    // publishDir "${params.out_dir}/star_index_genome", mode: 'copy', pattern: 'starIndex'
     publishDir "${params.log_dir}", mode: 'copy', pattern: '*.log'
 
     input:
@@ -24,10 +22,10 @@ process STAR_INDEX_GENOME {
     mkdir starIndex
 
     STAR --runThreadN ${params.threads_pe} \
-    	--runMode genomeGenerate \
+        --runMode genomeGenerate \
         --genomeDir starIndex \
         --genomeFastaFiles ${sequence} \
-		&> star_index_genome.log
+        &> star_index_genome.log
 
     """
 }
@@ -39,11 +37,9 @@ process STAR_ALIGN_PE {
 
     tag { library }
 
-    debug true
-
     publishDir "${params.out_dir}", mode: 'copy', pattern: "*.Aligned.sortedByCoord.out.bam"
-    publishDir "${params.out_dir}", mode: 'copy', pattern: "*.tab"
-    publishDir "${params.out_dir}", mode: 'copy', pattern: "*.Unmapped*"
+    // publishDir "${params.out_dir}", mode: 'copy', pattern: "*.tab"
+    // publishDir "${params.out_dir}", mode: 'copy', pattern: "*.Unmapped*"
     publishDir "${params.log_dir}", mode: 'copy', pattern: '*.log'
     publishDir "${params.log_dir}", mode: 'copy', pattern: '*.out'
 
@@ -75,7 +71,7 @@ process STAR_ALIGN_PE {
         --outFilterType BySJout \
         --outFilterMultimapNmax 500000000 \
         --alignEndsType Local \
-        --twopassMode None
+        --twopassMode None \
         &> ${library}_map_star.log
     """
 }
@@ -87,11 +83,9 @@ process STAR_ALIGN_SE {
     
     tag { library } 
 
-    debug true
-
     publishDir "${params.out_dir}", mode: 'copy', pattern: "*.Aligned.sortedByCoord.out.bam"
-    publishDir "${params.out_dir}", mode: 'copy', pattern: "*.tab"
-    publishDir "${params.out_dir}", mode: 'copy', pattern: "*.Unmapped*"
+    // publishDir "${params.out_dir}", mode: 'copy', pattern: "*.tab"
+    // publishDir "${params.out_dir}", mode: 'copy', pattern: "*.Unmapped*"
     publishDir "${params.log_dir}", mode: 'copy', pattern: '*.log'
     publishDir "${params.log_dir}", mode: 'copy', pattern: '*.out'
 
@@ -123,7 +117,7 @@ process STAR_ALIGN_SE {
         --outFilterType BySJout \
         --outFilterMultimapNmax 500000000 \
         --alignEndsType Local \
-        --twopassMode None
+        --twopassMode None \
         &> ${library}_map_star.log
     """
 }
