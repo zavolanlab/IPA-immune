@@ -32,19 +32,18 @@ mamba env create -f install/environment.yml
 
 ### 4. Activate environment
 
-Update und activate the Conda environment with:
+Activate the Conda environment with:
 
 ```bash
-mamba env update -f install/environment-update.yml
 conda activate ipa-immune
 ```
 
 ## Workflow
 
-The workflow makes use of [TECtool](https://github.com/zavolanlab/TECtool).
+The workflow makes use of [TECtool](https://github.com/balajtimate/TECtool).
 
 Inputs:
-1. Bulk RNA-Seq bam file
+1. Bulk RNA-Seq FASTQ files
 2. GTF annotation file
 3. Genome FASTA file
 4. BED file with IPA sites
