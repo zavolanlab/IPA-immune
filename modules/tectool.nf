@@ -5,8 +5,11 @@ nextflow.enable.dsl=2
 process TECTOOL {
     label "TECtool"
     container "docker://fgypas/tectool:0.4"
-
-    publishDir "${params.out_dir}", mode: 'copy', pattern: "*"
+    
+    tag { library }
+    
+    publishDir "${params.out_dir}", mode: 'copy', pattern: "*/*.gtf"
+    publishDir "${params.out_dir}", mode: 'copy', pattern: "*/*.tsv"
     publishDir "${params.log_dir}", mode: 'copy', pattern: '*.log'
     
     input:
@@ -17,7 +20,9 @@ process TECTOOL {
     path genome_fa
     
     output:
-    tuple val(library), path('*'), emit: enriched_gtf
+    tuple val(library), path('*/*.gtf'), emit: enriched_gtf
+    path '*/*.tsv', emit: tsv
+
 
     script:
     """

@@ -11,15 +11,11 @@ nextflow.enable.dsl = 2
 log.info """\
  IPA-IMMUNE - N F   P I P E L I N E
  ===================================
- samples: ${params.input_fastq}
- annotation GTF: ${params.annotation_gtf}
- polyA sites BED: ${params.polya_sites_bed}
- genome FASTA: ${params.genome_fa}
- outdir       : ${params.out_dir}
  """
 
 // import modules
-include { FASTQC } from './modules/fastqc.nf'
+include { FASTQC as FASTQC_FASTQ } from './modules/fastqc.nf'
+include { FASTQC as FASTQC_BAM } from './modules/fastqc.nf'
 // include { STAR_INDEX_GENOME } from './modules/alignment.nf'
 include { STAR_ALIGN_PE } from './modules/alignment.nf'
 include { STAR_ALIGN_SE as ALIGN_FASTQ_1 } from './modules/alignment.nf'
@@ -34,6 +30,9 @@ include { SAMTOOLS_BAM2FASTQ } from './modules/samtools.nf'
 include { TECTOOL as TECTOOL_1 } from './modules/tectool.nf'
 include { TECTOOL as TECTOOL_2 } from './modules/tectool.nf'
 include { TECTOOL as TECTOOL_3 } from './modules/tectool.nf'
+include { STRINGTIE_QUANTIFY as STRINGTIE_1 } from './modules/stringtie.nf'
+include { STRINGTIE_QUANTIFY as STRINGTIE_2 } from './modules/stringtie.nf'
+include { STRINGTIE_QUANTIFY as STRINGTIE_3 } from './modules/stringtie.nf'
 
 input_fastq_ch = Channel.fromFilePairs(params.input_fastq)
 genome_index_ch = channel.fromPath(params.genome_index)
@@ -46,7 +45,7 @@ workflow {
     //     params.genome_fa
     // )
     // genome_index = STAR_INDEX_GENOME.out.index
-    FASTQC(
+    FASTQC_FASTQ(
         input_fastq_ch
     )
     STAR_ALIGN_PE(
@@ -62,7 +61,9 @@ workflow {
         filtered_bam_tuple
     )
     bam_low_dupl_tupl = SAMTOOLS_GET_LOW_DUP_READS.out.bam_low_dupl_tupl
-    
+    FASTQC_BAM(
+        bam_low_dupl_tupl
+    )
     // Convert BAM to 2 FASTQ file     
     SAMTOOLS_BAM2FASTQ(bam_low_dupl_tupl)
     fastq1_tuple = SAMTOOLS_BAM2FASTQ.out.fastq1_tuple
@@ -86,6 +87,11 @@ workflow {
         params.polya_sites_bed,
         params.genome_fa
     )
+    enriched_gtf_1 = TECTOOL_1.out.enriched_gtf
+    STRINGTIE_1(
+        star_mapped_bam_1,
+        enriched_gtf_1
+    )
     // FASTQ2 from BAM
     ALIGN_FASTQ_2(
         fastq2_tuple,
@@ -103,6 +109,11 @@ workflow {
         params.polya_sites_bed,
         params.genome_fa
     )
+    enriched_gtf_2 = TECTOOL_2.out.enriched_gtf
+    STRINGTIE_2(
+        star_mapped_bam_2,
+        enriched_gtf_2
+    )
     // FASTQ_SINGLETON from BAM
     ALIGN_FASTQ_3(
         singleton_tuple,
@@ -119,6 +130,11 @@ workflow {
         params.annotation_gtf, 
         params.polya_sites_bed,
         params.genome_fa
+    )
+    enriched_gtf_singleton = TECTOOL_3.out.enriched_gtf
+    STRINGTIE_3(
+        star_mapped_bam_singleton,
+        enriched_gtf_singleton
     )
 }
 
