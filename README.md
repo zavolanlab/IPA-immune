@@ -61,3 +61,17 @@ cd tests/
 wget http://tectool.unibas.ch/data/test_data.tar.gz
 tar xzvf test_data.tar.gz
 ```
+
+## Running the workflow
+
+To start the workflow, in your activated `ipa-immune` conda environment, run
+
+```bash
+nextflow main.nf -profile conda
+```
+> Currently, running the workflow is only supported with conda
+
+For running on SLURM:
+```bash
+nextflow main.nf -profile slurm,conda
+```
