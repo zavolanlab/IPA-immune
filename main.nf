@@ -30,9 +30,8 @@ include { SAMTOOLS_BAM2FASTQ } from './modules/samtools.nf'
 include { TECTOOL as TECTOOL_1 } from './modules/tectool.nf'
 include { TECTOOL as TECTOOL_2 } from './modules/tectool.nf'
 include { TECTOOL as TECTOOL_3 } from './modules/tectool.nf'
-include { STRINGTIE_QUANTIFY as STRINGTIE_1 } from './modules/stringtie.nf'
-include { STRINGTIE_QUANTIFY as STRINGTIE_2 } from './modules/stringtie.nf'
-include { STRINGTIE_QUANTIFY as STRINGTIE_3 } from './modules/stringtie.nf'
+include { STRINGTIE_QUANTIFY } from './modules/stringtie.nf'
+include { STRINGTIE_COUNT_MATRIX } from './modules/stringtie.nf'
 
 input_fastq_ch = Channel.fromFilePairs(params.input_fastq)
 genome_index_ch = channel.fromPath(params.genome_index)
@@ -88,10 +87,6 @@ workflow {
         params.genome_fa
     )
     enriched_gtf_1 = TECTOOL_1.out.enriched_gtf
-    STRINGTIE_1(
-        star_mapped_bam_1,
-        enriched_gtf_1
-    )
     // FASTQ2 from BAM
     ALIGN_FASTQ_2(
         fastq2_tuple,
@@ -110,10 +105,6 @@ workflow {
         params.genome_fa
     )
     enriched_gtf_2 = TECTOOL_2.out.enriched_gtf
-    STRINGTIE_2(
-        star_mapped_bam_2,
-        enriched_gtf_2
-    )
     // FASTQ_SINGLETON from BAM
     ALIGN_FASTQ_3(
         singleton_tuple,
@@ -132,10 +123,8 @@ workflow {
         params.genome_fa
     )
     enriched_gtf_singleton = TECTOOL_3.out.enriched_gtf
-    STRINGTIE_3(
-        star_mapped_bam_singleton,
-        enriched_gtf_singleton
-    )
+
+    // MERGE 3 enriched GTFs and run STRINGTIE
 }
 
 /* 
