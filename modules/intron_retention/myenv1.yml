@@ -1,0 +1,11 @@
+name: myenv1
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - bedtools=2.31.1=hf5e1c6e_1
+  - numpy=1.26.4=py312heda63a1_0
+  - pandas=2.2.1=py312hfb8ada1_0
+  - python=3.12.2=hab00c5b_0_cpython
+  - samtools=1.19.2=h50ea8bc_1
+prefix: /scicore/home/zavolan/zhu0006/miniforge3/envs/myenv1
