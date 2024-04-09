@@ -65,3 +65,19 @@ For running on SLURM:
 ```bash
 nextflow main.nf -profile slurm,conda
 ```
+
+Unzip the test FASTQ files:
+```bash
+zcat /scicore/home/zavolan/GROUP/IPA/data/bulk_RNA_seq/test/ENCFF184CDV_ENCFF456OPJ.R1.fastq.gz > tests/ENCFF184CDV_ENCFF456OPJ.R1.fastq
+zcat /scicore/home/zavolan/GROUP/IPA/data/bulk_RNA_seq/test/ENCFF184CDV_ENCFF456OPJ.R2.fastq.gz > tests/ENCFF184CDV_ENCFF456OPJ.R2.fastq
+```
+
+Running the workflow with setting the params for test files from sciCORE:
+```bash
+nextflow main.nf -profile slurm,conda \
+    --input_fastq tests/ENCFF184CDV_*.R{1,2}.fastq \
+    --genome_index /scicore/home/zavolan/GROUP/RBP_perturbational_networks/wf_runs/v1/output/STAR_indices/human/without_GTF/STAR_index \
+    --annotation_gtf /scicore/home/zavolan/GROUP/Genomes/homo_sapiens/hg38_v42/gencode.v42.annotation.gtf \
+    --polya_sites_bed /scicore/home/zavolan/GROUP/IPA/IPA_catalogue/SCINPAS_all_normal_q15Expr.bed \
+    --genome_fa /scicore/home/zavolan/GROUP/Genomes/homo_sapiens/GRCh38.primary_assembly.genome.fa
+```
