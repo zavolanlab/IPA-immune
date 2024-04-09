@@ -52,16 +52,6 @@ Inputs:
 Outputs:
 1. Table: raw number of reads supporting each PAS in the sample
 
-## TESTING
-
-Download and uncompress testing data:
-
-```bash
-cd tests/
-wget http://tectool.unibas.ch/data/test_data.tar.gz
-tar xzvf test_data.tar.gz
-```
-
 ## Running the workflow
 
 To start the workflow, in your activated `ipa-immune` conda environment, run

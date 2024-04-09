@@ -28,18 +28,18 @@ process SAMTOOLS_GET_UNIQUE_MAPPERS {
     
     tag { library }
 
-    // publishDir "${params.out_dir}", mode: 'copy', pattern: "*.bam_filtered"
+    // publishDir "${params.out_dir}", mode: 'copy', pattern: "*.unique_filtered.bam"
 
     input:
     tuple val(library), path(input_bam)
 
     output:
-    tuple val(library), path('*.bam_filtered'), emit: filtered_bam_tuple
+    tuple val(library), path('*.unique_filtered.bam'), emit: filtered_bam_tuple
 
     script:
     """
     samtools view -@ ${params.threads_pe} -h -q 255 -u ${input_bam} | \
-        samtools sort -@ ${params.threads_pe} -o output.bam_filtered
+        samtools sort -@ ${params.threads_pe} -o ${library}.unique_filtered.bam
     """
 }
 
@@ -49,13 +49,13 @@ process SAMTOOLS_GET_LOW_DUP_READS {
 
     tag { library }
 
-    // publishDir "${params.out_dir}", mode: 'copy', pattern: "*.bam_low_dupl"
+    // publishDir "${params.out_dir}", mode: 'copy', pattern: "*.low_dupl.bam"
 
     input:
     tuple val(library), path(input_bam)
 
     output:
-    tuple val(library), path('*.bam_low_dupl'), emit: bam_low_dupl_tupl
+    tuple val(library), path('*.low_dupl.bam'), emit: bam_low_dupl_tupl
 
     script:
     """
@@ -70,7 +70,7 @@ process SAMTOOLS_GET_LOW_DUP_READS {
     samtools view -@ ${params.threads_pe} out.deduplicated_bam_file_intermediate | awk -F"\\t" '{{print \$1}}' > out.selected_read_names_file; \
     samtools view -@ ${params.threads_pe} -D do:out.selected_read_names_file -u out.sorted_mkdupped_bam | samtools sort -@ ${params.threads_pe} - > out.low_duplicates_intermediate; \
     samtools merge -f -@ ${params.threads_pe} out.bam_low_dupl_nonsorted out.low_duplicates_intermediate out.deduplicated_bam_file_intermediate; \
-    samtools sort -@ ${params.threads_pe} out.bam_low_dupl_nonsorted > out.bam_low_dupl
+    samtools sort -@ ${params.threads_pe} out.bam_low_dupl_nonsorted > ${library}.low_dupl.bam
     """
 }
 
@@ -83,7 +83,6 @@ process SAMTOOLS_BAM2FASTQ {
     
     // publishDir "${params.out_dir}", mode: 'copy', pattern: "*_1.fastq"
     // publishDir "${params.out_dir}", mode: 'copy', pattern: "*_2.fastq"
-    // publishDir "${params.out_dir}", mode: 'copy', pattern: "*_singleton.fastq"
     publishDir "${params.log_dir}", mode: 'copy', pattern: '*.log'
 
     input:
@@ -92,11 +91,11 @@ process SAMTOOLS_BAM2FASTQ {
     output:  
     tuple val("${library}_1"), path("${library}_1.fastq"), emit: fastq1_tuple
     tuple val("${library}_2"), path("${library}_2.fastq"), emit: fastq2_tuple
-    tuple val("${library}_singleton"), path("${library}_singleton.fastq"), emit: singleton_tuple
 
     script:
     """
-    samtools fastq -@ ${params.threads_pe} -1 "${library}_1.fastq" -2 "${library}_2.fastq" -0 /dev/null -s "${library}_singleton.fastq" ${bam} &> ${library}_bam2fastq.log
+    samtools sort -n -@ ${params.threads_pe} ${bam} -o ${library}.out.querysort.bam
+    samtools fastq -@ ${params.threads_pe} -1 "${library}_1.fastq" -2 "${library}_2.fastq" -0 /dev/null -s /dev/null ${library}.out.querysort.bam &> ${library}_bam2fastq.log
     """
 }
 

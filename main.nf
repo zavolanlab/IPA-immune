@@ -20,16 +20,14 @@ include { FASTQC as FASTQC_BAM } from './modules/fastqc.nf'
 include { STAR_ALIGN_PE } from './modules/alignment.nf'
 include { STAR_ALIGN_SE as ALIGN_FASTQ_1 } from './modules/alignment.nf'
 include { STAR_ALIGN_SE as ALIGN_FASTQ_2 } from './modules/alignment.nf'
-include { STAR_ALIGN_SE as ALIGN_FASTQ_3 } from './modules/alignment.nf'
 include { SAMTOOLS_INDEX as INDEX_BAM_1 } from './modules/samtools.nf'
 include { SAMTOOLS_INDEX as INDEX_BAM_2 } from './modules/samtools.nf'
-include { SAMTOOLS_INDEX as INDEX_BAM_3 } from './modules/samtools.nf'
 include { SAMTOOLS_GET_UNIQUE_MAPPERS } from './modules/samtools.nf'
 include { SAMTOOLS_GET_LOW_DUP_READS } from './modules/samtools.nf'
 include { SAMTOOLS_BAM2FASTQ } from './modules/samtools.nf'
 include { TECTOOL as TECTOOL_1 } from './modules/tectool.nf'
 include { TECTOOL as TECTOOL_2 } from './modules/tectool.nf'
-include { TECTOOL as TECTOOL_3 } from './modules/tectool.nf'
+include { BEDTOOLS_INTERSECT } from './modules/bedtools.nf'
 include { STRINGTIE_QUANTIFY } from './modules/stringtie.nf'
 include { STRINGTIE_COUNT_MATRIX } from './modules/stringtie.nf'
 
@@ -67,7 +65,6 @@ workflow {
     SAMTOOLS_BAM2FASTQ(bam_low_dupl_tupl)
     fastq1_tuple = SAMTOOLS_BAM2FASTQ.out.fastq1_tuple
     fastq2_tuple = SAMTOOLS_BAM2FASTQ.out.fastq2_tuple
-    singleton_tuple = SAMTOOLS_BAM2FASTQ.out.singleton_tuple
     
     // FASTQ1 from BAM
     ALIGN_FASTQ_1(
@@ -105,26 +102,19 @@ workflow {
         params.genome_fa
     )
     enriched_gtf_2 = TECTOOL_2.out.enriched_gtf
-    // FASTQ_SINGLETON from BAM
-    ALIGN_FASTQ_3(
-        singleton_tuple,
-        genome_index_ch
-    )
-    star_mapped_bam_singleton = ALIGN_FASTQ_3.out.star_mapped_bam
-    INDEX_BAM_3(
-        star_mapped_bam_singleton
-    )
-    star_mapped_bam_index_singleton = INDEX_BAM_3.out.index
-    TECTOOL_3(
-        star_mapped_bam_index_singleton,
-        star_mapped_bam_singleton,
-        params.annotation_gtf, 
-        params.polya_sites_bed,
-        params.genome_fa
-    )
-    enriched_gtf_singleton = TECTOOL_3.out.enriched_gtf
 
-    // MERGE 3 enriched GTFs and run STRINGTIE
+    // MERGE 2 enriched GTFs and run STRINGTIE on original BAM
+    BEDTOOLS_INTERSECT(
+        enriched_gtf_1,
+        enriched_gtf_2
+    )
+    intersect_gtf = BEDTOOLS_INTERSECT.out.intersect_gtf
+    STRINGTIE_QUANTIFY(
+        bam_low_dupl_tupl,
+        intersect_gtf
+    )
+    stringtie_gtf = STRINGTIE_QUANTIFY.out.stringtie_gtf
+    STRINGTIE_COUNT_MATRIX(stringtie_gtf)
 }
 
 /* 
