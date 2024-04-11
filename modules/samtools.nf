@@ -45,7 +45,7 @@ process SAMTOOLS_GET_UNIQUE_MAPPERS {
 
 process SAMTOOLS_GET_LOW_DUP_READS {
 
-    label "low_dup"
+    label "samtools"
 
     tag { library }
 

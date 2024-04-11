@@ -39,7 +39,8 @@ process STRINGTIE_COUNT_MATRIX{
 
     script:
     """
-    python ${project_dir}/modules/prepDE.py ${gtf} -t ${library}_transcript_count_matrix.csv
+    echo "${library} ${gtf}" > ${library}_sample_list.txt
+    python ${projectDir}/modules/prepDE.py -i ${library}_sample_list.txt -t ${library}_transcript_count_matrix.csv
     echo "transcript_id,." > ${library}_novel_transcript_matrix.csv; grep "novel_" ${library}_transcript_count_matrix.csv >> ${library}_novel_transcript_matrix.csv
     """
 }

@@ -11,6 +11,12 @@ nextflow.enable.dsl = 2
 log.info """\
  IPA-IMMUNE - N F   P I P E L I N E
  ===================================
+ Samples: ${params.input_fastq}
+ Genome index: ${params.genome_index}
+ Annotation GTF: ${params.annotation_gtf}
+ PolyA sites BED: ${params.polya_sites_bed}
+ Genome FASTA: ${params.genome_fa}
+ Output DIR: ${params.out_dir}
  """
 
 // import modules
@@ -26,6 +32,8 @@ include { SAMTOOLS_GET_UNIQUE_MAPPERS } from './modules/samtools.nf'
 include { SAMTOOLS_GET_LOW_DUP_READS } from './modules/samtools.nf'
 include { SAMTOOLS_BAM2FASTQ } from './modules/samtools.nf'
 include { TECTOOL as TECTOOL_1 } from './modules/tectool.nf'
+include { TECTOOL_RENAME as TECTOOL_RENAME_1 } from './modules/tectool.nf'
+include { TECTOOL_RENAME as TECTOOL_RENAME_2 } from './modules/tectool.nf'
 include { TECTOOL as TECTOOL_2 } from './modules/tectool.nf'
 include { BEDTOOLS_INTERSECT } from './modules/bedtools.nf'
 include { STRINGTIE_QUANTIFY } from './modules/stringtie.nf'
@@ -84,6 +92,10 @@ workflow {
         params.genome_fa
     )
     enriched_gtf_1 = TECTOOL_1.out.enriched_gtf
+    TECTOOL_RENAME_1(
+        enriched_gtf_1
+    )
+    renamed_gtf_1 = TECTOOL_RENAME_1.out.renamed_gtf
     // FASTQ2 from BAM
     ALIGN_FASTQ_2(
         fastq2_tuple,
@@ -102,11 +114,14 @@ workflow {
         params.genome_fa
     )
     enriched_gtf_2 = TECTOOL_2.out.enriched_gtf
-
+    TECTOOL_RENAME_2(
+        enriched_gtf_2
+    )
+    renamed_gtf_2 = TECTOOL_RENAME_2.out.renamed_gtf
     // MERGE 2 enriched GTFs and run STRINGTIE on original BAM
     BEDTOOLS_INTERSECT(
-        enriched_gtf_1,
-        enriched_gtf_2
+        renamed_gtf_1,
+        renamed_gtf_2
     )
     intersect_gtf = BEDTOOLS_INTERSECT.out.intersect_gtf
     STRINGTIE_QUANTIFY(

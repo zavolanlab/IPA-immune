@@ -7,8 +7,7 @@ process TECTOOL {
     container "docker://fgypas/tectool:0.4"
     
     tag { library }
-    
-    publishDir "${params.out_dir}", mode: 'copy', pattern: "*/*.gtf"
+
     publishDir "${params.out_dir}", mode: 'copy', pattern: "*/*.tsv"
     publishDir "${params.log_dir}", mode: 'copy', pattern: '*.log'
     
@@ -31,7 +30,26 @@ process TECTOOL {
         --polyasites ${polya_sites_bed} \
         --bam ${bam} \
         --genome ${genome_fa} \
-        --output_dir ${library} \
+        --output_dir ${library}_tectool \
         &> ${library}_tectool.log
+    """
+}
+
+process TECTOOL_RENAME {
+    
+    tag { library }
+    
+    publishDir "${params.out_dir}", mode: 'copy', pattern: "*_renamed.gtf"
+    
+    input:
+    tuple val(library), path(gtf)
+    
+    output:
+    tuple val(library), path('*_enriched.gtf'), emit: renamed_gtf
+
+
+    script:
+    """
+    mv ${gtf} ${library}_enriched.gtf
     """
 }
