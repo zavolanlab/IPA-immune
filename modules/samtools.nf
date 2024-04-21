@@ -2,25 +2,25 @@
 
 nextflow.enable.dsl=2
 
-process SAMTOOLS_INDEX {
-
-    label "samtools"
-    
-    tag { library }
-
-    // publishDir "${params.out_dir}", mode: 'copy', pattern: "*.bai"
-
-    input:
-    tuple val(library), path(bam)
-
-    output:
-    tuple val(library), path('*.bai'), emit: index
-
-    script:
-    """
-    samtools index -@ ${params.threads_se} -M ${bam}
-    """
-}
+// process SAMTOOLS_INDEX {
+// 
+//     label "samtools"
+//     
+//     tag { library }
+// 
+//     // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.bai"
+// 
+//     input:
+//     tuple val(library), path(bam)
+// 
+//     output:
+//     tuple val(library), path('*.bai'), emit: index
+// 
+//     script:
+//     """
+//     samtools index -@ ${params.threads_se} -M ${bam}
+//     """
+// }
 
 process SAMTOOLS_GET_UNIQUE_MAPPERS {
 
@@ -28,7 +28,7 @@ process SAMTOOLS_GET_UNIQUE_MAPPERS {
     
     tag { library }
 
-    // publishDir "${params.out_dir}", mode: 'copy', pattern: "*.unique_filtered.bam"
+    // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.unique_filtered.bam"
 
     input:
     tuple val(library), path(input_bam)
@@ -45,11 +45,11 @@ process SAMTOOLS_GET_UNIQUE_MAPPERS {
 
 process SAMTOOLS_GET_LOW_DUP_READS {
 
-    label "samtools"
+    label "low_dup"
 
     tag { library }
 
-    // publishDir "${params.out_dir}", mode: 'copy', pattern: "*.low_dupl.bam"
+    // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.low_dupl.bam"
 
     input:
     tuple val(library), path(input_bam)
@@ -81,9 +81,9 @@ process SAMTOOLS_BAM2FASTQ {
     
     tag { library }
     
-    // publishDir "${params.out_dir}", mode: 'copy', pattern: "*_1.fastq"
-    // publishDir "${params.out_dir}", mode: 'copy', pattern: "*_2.fastq"
-    publishDir "${params.log_dir}", mode: 'copy', pattern: '*.log'
+    // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*_1.fastq"
+    // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*_2.fastq"
+    publishDir "${params.log_dir}/${library}_logs", mode: 'copy', pattern: '*.log'
 
     input:
     tuple val(library), path(bam)

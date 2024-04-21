@@ -6,7 +6,9 @@ process FASTQC {
 
     label 'fastqc'
     
-    publishDir "${params.out_dir}", mode: 'copy', pattern: '*_fastqc.html'
+    tag { library }
+    
+    publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: '*_fastqc.html'
 
     input:
     tuple val(library), file(reads)

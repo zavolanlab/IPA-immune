@@ -8,18 +8,18 @@ process STRINGTIE_QUANTIFY {
     
     tag { library }
 
-    publishDir "${params.out_dir}", mode: 'copy', pattern: '*.gtf'
+    publishDir "${params.out_dir}", mode: 'copy', pattern: '*_stringtie_quantified.gtf'
 
     input:
     tuple val(library), file(bam)
     tuple val(library), file(gtf)
 
     output:
-    tuple val(library), path('*.gtf'), emit: stringtie_gtf
+    tuple val(library), path('*_stringtie_quantified.gtf'), emit: stringtie_gtf
 
     script:
     """
-    stringtie ${bam} -e -G ${gtf} -o ${library}_stringtie_quantified.gtf
+    stringtie -o ${library}_stringtie_quantified.gtf -p ${params.threads_pe} -e -G ${gtf} ${bam}
     """
 }
 
@@ -29,18 +29,18 @@ process STRINGTIE_COUNT_MATRIX{
     
     tag { library }
 
-    publishDir "${params.out_dir}", mode: 'copy', pattern: '*.csv'
+    publishDir "${params.out_dir}", mode: 'copy', pattern: '*_transcript_count_matrix.csv'
     
     input:
     tuple val(library), file(gtf)
 
     output:
-    tuple val(library), path('*.csv'), emit: STRINGTIE_COUNT_MATRIX
+    tuple val(library), path('*_transcript_count_matrix.csv'), emit: STRINGTIE_COUNT_MATRIX
 
     script:
     """
     echo "${library} ${gtf}" > ${library}_sample_list.txt
-    python ${projectDir}/modules/prepDE.py -i ${library}_sample_list.txt -t ${library}_transcript_count_matrix.csv
-    echo "transcript_id,." > ${library}_novel_transcript_matrix.csv; grep "novel_" ${library}_transcript_count_matrix.csv >> ${library}_novel_transcript_matrix.csv
+    python ${projectDir}/modules/prepDE.py -l 48 -i ${library}_sample_list.txt -t ${library}_transcript_count_matrix.csv
+    echo "transcript_id,." > ${library}_novel_transcript_count_matrix.csv; grep "novel_" ${library}_transcript_count_matrix.csv >> ${library}_novel_transcript_count_matrix.csv
     """
 }

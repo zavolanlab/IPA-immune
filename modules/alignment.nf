@@ -7,8 +7,8 @@ process STAR_INDEX_GENOME {
     label 'star'
     label 'indexing'
     
-    // publishDir "${params.out_dir}/star_index_genome", mode: 'copy', pattern: 'starIndex'
-    publishDir "${params.log_dir}", mode: 'copy', pattern: '*.log'
+    // publishDir "${params.out_dir}/${library}_results/star_index_genome", mode: 'copy', pattern: 'starIndex'
+    publishDir "${params.log_dir}/${library}_logs", mode: 'copy', pattern: '*.log'
 
     input:
     path sequence
@@ -37,11 +37,11 @@ process STAR_ALIGN_PE {
 
     tag { library }
 
-    publishDir "${params.out_dir}", mode: 'copy', pattern: "*.Aligned.sortedByCoord.out.bam"
-    // publishDir "${params.out_dir}", mode: 'copy', pattern: "*.tab"
-    // publishDir "${params.out_dir}", mode: 'copy', pattern: "*.Unmapped*"
-    publishDir "${params.log_dir}", mode: 'copy', pattern: '*.log'
-    publishDir "${params.log_dir}", mode: 'copy', pattern: '*.out'
+    // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.Aligned.sortedByCoord.out.bam"
+    // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.tab"
+    // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.Unmapped*"
+    publishDir "${params.log_dir}/${library}_logs", mode: 'copy', pattern: '*.log'
+    publishDir "${params.log_dir}/${library}_logs", mode: 'copy', pattern: '*.out'
 
     input:
     tuple val(library), file(reads)
@@ -83,11 +83,11 @@ process STAR_ALIGN_SE {
     
     tag { library } 
 
-    publishDir "${params.out_dir}", mode: 'copy', pattern: "*.Aligned.sortedByCoord.out.bam"
-    // publishDir "${params.out_dir}", mode: 'copy', pattern: "*.tab"
-    // publishDir "${params.out_dir}", mode: 'copy', pattern: "*.Unmapped*"
-    publishDir "${params.log_dir}", mode: 'copy', pattern: '*.log'
-    publishDir "${params.log_dir}", mode: 'copy', pattern: '*.out'
+    // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.Aligned.sortedByCoord.out.bam"
+    // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.tab"
+    // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.Unmapped*"
+    publishDir "${params.log_dir}/${library}_logs", mode: 'copy', pattern: '*.log'
+    publishDir "${params.log_dir}/${library}_logs", mode: 'copy', pattern: '*.out'
 
     input:
     tuple val(library), path(input_fastq)

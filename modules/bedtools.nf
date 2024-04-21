@@ -2,23 +2,24 @@
 
 nextflow.enable.dsl=2
 
-process BEDTOOLS_INTERSECT {
+process BEDTOOLS_MERGE {
 
     label 'bedtools'
     
     tag { library }
 
+    // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*_merged.gtf"
+
     input:
-    tuple val(library), file(gtf1)
-    tuple val(library), file(gtf2)
+    tuple val(library), file(bam)
+    tuple val(library_1), file(gtf1)
+    tuple val(library_2), file(gtf2)
 
     output:
-    tuple val(library), path('*.gtf'), emit: intersect_gtf
+    tuple val(library), path('*_merged.gtf'), emit: merged_gtf
 
     script:
     """
-    sort -k1,1 -k4,4n ${gtf1} > enriched.sorted.1.gtf
-    sort -k1,1 -k4,4n ${gtf2} > enriched.sorted.2.gtf
-    bedtools intersect -u -a enriched.sorted.1.gtf -b enriched.sorted.2.gtf > common_annotations.gtf
+    cat ${gtf1} ${gtf2} | sort -k1,1 -k4,4n | uniq > ${library}_merged.gtf
     """
 }
