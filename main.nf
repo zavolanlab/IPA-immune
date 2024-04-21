@@ -82,6 +82,7 @@ workflow {
         )
         star_mapped_bam_1 = ALIGN_FASTQ_1.out.star_mapped_bam
         TECTOOL_1(
+            bam_low_dupl_tupl,
             star_mapped_bam_1,
             annotation_gtf_ch, 
             polya_sites_bed_ch,
@@ -95,6 +96,7 @@ workflow {
         )
         star_mapped_bam_2 = ALIGN_FASTQ_2.out.star_mapped_bam
         TECTOOL_2(
+            bam_low_dupl_tupl,
             star_mapped_bam_2,
             annotation_gtf_ch, 
             polya_sites_bed_ch,

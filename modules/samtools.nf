@@ -49,7 +49,7 @@ process SAMTOOLS_GET_LOW_DUP_READS {
 
     tag { library }
 
-    // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.low_dupl.bam"
+    publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.low_dupl.bam"
 
     input:
     tuple val(library), path(input_bam)

@@ -13,5 +13,7 @@ dependencies:
   - star=2.7.8a
   - pybedtools
   - fastqc
+  - bedops
+  - gffread
   - pip:
     - git+https://github.com/balajtimate/TECtool@update_requirements

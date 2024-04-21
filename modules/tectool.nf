@@ -9,10 +9,11 @@ process TECTOOL {
     tag { library }
 
     // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*/*.tsv"
-    publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*_enriched_annotation.gtf"
-    publishDir "${params.log_dir}/${library}_logs", mode: 'copy', pattern: '*.log'
+    publishDir "${params.out_dir}/${library_lowdup}_results", mode: 'copy', pattern: "*_enriched_annotation.gtf"
+    publishDir "${params.log_dir}/${library_lowdup}_logs", mode: 'copy', pattern: '*.log'
     
     input:
+    tuple val(library_lowdup), path(bam_lowdup)
     tuple val(library), path(bam)
     path annotation_gtf
     path polya_sites_bed
