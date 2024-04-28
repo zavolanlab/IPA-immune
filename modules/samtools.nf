@@ -98,4 +98,3 @@ process SAMTOOLS_BAM2FASTQ {
     samtools fastq -@ ${params.threads_pe} -1 "${library}_1.fastq" -2 "${library}_2.fastq" -0 /dev/null -s /dev/null ${library}.out.querysort.bam &> ${library}_bam2fastq.log
     """
 }
-

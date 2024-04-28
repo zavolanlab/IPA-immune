@@ -65,3 +65,23 @@ process SALMON_QUANTIFY {
     mv ${library}_transcript_quant/quant.sf ${library}_quant.tsv
     """
 }
+
+process SALMON_FILTER_RESULT {
+    
+    tag { library }
+
+    publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: '*_filtered_quant.tsv'
+    
+    input:
+    tuple val(library), file(gtf)
+    path polya_sites_bed
+    tuple val(library), file(tsv)
+
+    output:
+    tuple val(library), path('*_filtered_quant.tsv'), emit: salmon_filtered_counts
+
+    script:
+    """
+
+    """
+}

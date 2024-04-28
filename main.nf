@@ -26,6 +26,7 @@ include { SAMTOOLS_BAM2FASTQ } from './modules/samtools.nf'
 include { TECTOOL as TECTOOL_1 } from './modules/tectool.nf'
 include { TECTOOL as TECTOOL_2 } from './modules/tectool.nf'
 include { BEDTOOLS_MERGE } from './modules/bedtools.nf'
+include { BEDTOOLS_FILTER_QUANT } from './modules/bedtools.nf'
 // include { STRINGTIE_QUANTIFY } from './modules/stringtie.nf'
 // include { STRINGTIE_COUNT_MATRIX } from './modules/stringtie.nf'
 include { SALMON_TRANSCRIPTOME } from './modules/salmon.nf'
@@ -131,6 +132,12 @@ workflow {
             fastq2_tuple
         )
         salmon_counts = SALMON_QUANTIFY.out.salmon_counts
+        BEDTOOLS_FILTER_QUANT(
+            merged_gtf,
+            polya_sites_bed_ch,
+            salmon_counts
+        )
+        filter_quant_results = BEDTOOLS_FILTER_QUANT.out.filtered_quant
     }
 }
 
