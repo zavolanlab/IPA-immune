@@ -15,5 +15,6 @@ dependencies:
   - fastqc
   - bedops
   - gffread
+  - gtfparse
   - pip:
     - git+https://github.com/balajtimate/TECtool@update_requirements
