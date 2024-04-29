@@ -12,6 +12,9 @@ dependencies:
   - salmon=1.10.2
   - star=2.7.8a
   - pybedtools
-  # - singularity
+  - fastqc
+  - bedops
+  - gffread
+  - gtfparse
   - pip:
     - git+https://github.com/balajtimate/TECtool@update_requirements

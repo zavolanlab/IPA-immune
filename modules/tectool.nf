@@ -5,29 +5,33 @@ nextflow.enable.dsl=2
 process TECTOOL {
     label "TECtool"
     container "docker://fgypas/tectool:0.4"
+    
+    tag { library }
 
-    publishDir "${params.out_dir}", mode: 'copy', pattern: "*"
-    publishDir "${params.log_dir}", mode: 'copy', pattern: "*.log"
-
+    // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*/*.tsv"
+    publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*_enriched_annotation.gtf"
+    publishDir "${params.log_dir}/${library}_logs", mode: 'copy', pattern: '*.log'
+    
     input:
-    tuple val(library), path(index)
     tuple val(library), path(bam)
     path annotation_gtf
     path polya_sites_bed
     path genome_fa
-
+    
     output:
-    tuple val(library), path("*"), emit: enriched_gtf
+    tuple val(library), path('*.gtf'), emit: enriched_gtf
+    path '*/*.tsv', emit: tsv
+
 
     script:
     """
+    samtools index -@ ${params.threads_se} -M ${bam}
     tectool \
         --annotation ${annotation_gtf} \
         --polyasites ${polya_sites_bed} \
         --bam ${bam} \
         --genome ${genome_fa} \
-        --output_dir ${library} \
-        --verbose \
-        &> ${library}_tectool.log
+        --output_dir ${library}_tectool &> ${library}_tectool.log
+    mv ${library}_tectool/enriched_annotation.gtf ${library}_enriched_annotation.gtf
     """
 }
