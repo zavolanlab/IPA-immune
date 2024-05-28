@@ -8,7 +8,7 @@ process TECTOOL {
     
     tag { library }
 
-    // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*/*.tsv"
+    publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*/*.tsv"
     publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*_enriched_annotation.gtf"
     publishDir "${params.log_dir}/${library}_logs", mode: 'copy', pattern: '*.log'
     
@@ -31,7 +31,8 @@ process TECTOOL {
         --polyasites ${polya_sites_bed} \
         --bam ${bam} \
         --genome ${genome_fa} \
+        --num_cores ${params.threads_se} \
         --output_dir ${library}_tectool &> ${library}_tectool.log
-    mv ${library}_tectool/enriched_annotation.gtf ${library}_enriched_annotation.gtf
+    mv ${library}_tectool/enriched_annotation.gtf ${library}_enriched_annotation.gtf  
     """
 }

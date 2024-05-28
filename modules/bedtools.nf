@@ -12,15 +12,18 @@ process BEDTOOLS_MERGE {
 
     input:
     tuple val(library), file(bam)
-    tuple val(library_1), file(gtf1)
-    tuple val(library_2), file(gtf2)
+    tuple val(library_1), path(gtf_files_1)
+    tuple val(library_2), path(gtf_files_2)
 
     output:
     tuple val(library), path('*_merged.gtf'), emit: merged_gtf
 
     script:
     """
-    cat ${gtf1} ${gtf2} | sort -k1,1 -k4,4n | uniq > ${library}_merged.gtf
+    cat \$(ls -v ${gtf_files_1}) > ${library_1}_tectool_annotation_merged.gtf
+    cat \$(ls -v ${gtf_files_2}) > ${library_2}_tectool_annotation_merged.gtf
+    cat ${library_1}_tectool_annotation_merged.gtf ${library_2}_tectool_annotation_merged.gtf \
+        | sort -k1,1 -k4,4n | uniq > ${library}_merged.gtf
     """
 }
 

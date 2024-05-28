@@ -83,7 +83,7 @@ process STAR_ALIGN_SE {
     
     tag { library } 
 
-    // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.Aligned.sortedByCoord.out.bam"
+    publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.Aligned.sortedByCoord.out.bam"
     // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.tab"
     // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.Unmapped*"
     publishDir "${params.log_dir}/${library}_logs", mode: 'copy', pattern: '*.log'
