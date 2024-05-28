@@ -2,31 +2,6 @@
 
 nextflow.enable.dsl=2
 
-process BEDTOOLS_MERGE {
-
-    label 'bedtools'
-    
-    tag { library }
-
-    publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*_merged.gtf"
-
-    input:
-    tuple val(library), file(bam)
-    tuple val(library_1), path(gtf_files_1)
-    tuple val(library_2), path(gtf_files_2)
-
-    output:
-    tuple val(library), path('*_merged.gtf'), emit: merged_gtf
-
-    script:
-    """
-    cat \$(ls -v ${gtf_files_1}) > ${library_1}_tectool_annotation_merged.gtf
-    cat \$(ls -v ${gtf_files_2}) > ${library_2}_tectool_annotation_merged.gtf
-    cat ${library_1}_tectool_annotation_merged.gtf ${library_2}_tectool_annotation_merged.gtf \
-        | sort -k1,1 -k4,4n | uniq > ${library}_merged.gtf
-    """
-}
-
 process BEDTOOLS_FILTER_QUANT {
 
     label 'bedtools'

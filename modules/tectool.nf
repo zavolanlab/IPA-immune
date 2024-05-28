@@ -36,3 +36,29 @@ process TECTOOL {
     mv ${library}_tectool/enriched_annotation.gtf ${library}_enriched_annotation.gtf  
     """
 }
+
+process TECTOOL_MERGE {
+
+    label 'bedtools'
+    
+    tag { library }
+
+    publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*_merged.gtf"
+
+    input:
+    tuple val(library), file(bam)
+    tuple val(library_1), path(gtf_files_1)
+    tuple val(library_2), path(gtf_files_2)
+
+    output:
+    tuple val(library), path('*_merged.gtf'), emit: merged_gtf
+
+    script:
+    """
+    echo -e "${gtf_files_1}\n${gtf_files_2}" > ${library}_tectool_annotation_files.tsv
+    tectool_add_novel_transcripts_to_gtf_file \
+        --list_of_gtf_files ${library}_tectool_annotation_files.tsv \
+        --out-dir ${library}_tectool_merged_annotations
+    mv ${library}_tectool_merged_annotations/merged_annotation.gtf ${library}_tectool_annotation_merged.gtf
+    """
+}
