@@ -29,6 +29,7 @@ include { BEDTOOLS_FILTER_QUANT } from './modules/bedtools.nf'
 include { SALMON_TRANSCRIPTOME } from './modules/salmon.nf'
 include { SALMON_INDEX } from './modules/salmon.nf'
 include { SALMON_QUANTIFY } from './modules/salmon.nf'
+include { INTRON_RETENTION } from './modules/intron_retention.nf'
 
 input_fastq_ch = Channel.fromFilePairs(params.input_fastq)
 genome_index_ch = Channel.fromPath(params.genome_index).collect()
@@ -123,6 +124,12 @@ workflow {
         //     salmon_counts
         // )
         // filter_quant_results = BEDTOOLS_FILTER_QUANT.out.filtered_quant
+        // Separate IR workflow
+        INTRON_RETENTION(
+            bam_low_dupl_tupl,
+            annotation_gtf_ch
+        )
+        intron_retention = INTRON_RETENTION.out.INTRON_RETENTION_MATRIX
     }
 }
 

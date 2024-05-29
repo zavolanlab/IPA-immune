@@ -343,6 +343,7 @@ filtered_reads_basename = filename + "_filteredReads.bed"
 filtered_reads_path = os.path.join(options.out, filtered_reads_basename)
 
 if options.filtered:
+    LOGGER.info("Skipped multimappers filtering.")
     command = f"bedtools bamtobed -split -i {options.bam} | awk 'BEGIN{{OFS=\"\\t\"}} {{$4=\"-\"; $5=0; print}}' > {filtered_reads_path}"
 else:
     LOGGER.info("Filtering multimappers...")
