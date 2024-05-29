@@ -17,4 +17,4 @@ dependencies:
   - gffread
   - gtfparse
   - pip:
-    - git+https://github.com/balajtimate/TECtool@update_requirements
+    - git+https://github.com/balajtimate/TECtool@master

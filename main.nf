@@ -16,7 +16,6 @@ log.info """\
 // import modules
 include { FASTQC as FASTQC_FASTQ } from './modules/fastqc.nf'
 include { FASTQC as FASTQC_BAM } from './modules/fastqc.nf'
-// include { STAR_INDEX_GENOME } from './modules/alignment.nf'
 include { STAR_ALIGN_PE } from './modules/alignment.nf'
 include { STAR_ALIGN_SE as ALIGN_FASTQ_1 } from './modules/alignment.nf'
 include { STAR_ALIGN_SE as ALIGN_FASTQ_2 } from './modules/alignment.nf'
@@ -25,13 +24,12 @@ include { SAMTOOLS_GET_LOW_DUP_READS } from './modules/samtools.nf'
 include { SAMTOOLS_BAM2FASTQ } from './modules/samtools.nf'
 include { TECTOOL as TECTOOL_1 } from './modules/tectool.nf'
 include { TECTOOL as TECTOOL_2 } from './modules/tectool.nf'
-include { BEDTOOLS_MERGE } from './modules/bedtools.nf'
+include { TECTOOL_MERGE } from './modules/tectool.nf'
 include { BEDTOOLS_FILTER_QUANT } from './modules/bedtools.nf'
-// include { STRINGTIE_QUANTIFY } from './modules/stringtie.nf'
-// include { STRINGTIE_COUNT_MATRIX } from './modules/stringtie.nf'
 include { SALMON_TRANSCRIPTOME } from './modules/salmon.nf'
 include { SALMON_INDEX } from './modules/salmon.nf'
 include { SALMON_QUANTIFY } from './modules/salmon.nf'
+include { INTRON_RETENTION } from './modules/intron_retention.nf'
 
 input_fastq_ch = Channel.fromFilePairs(params.input_fastq)
 genome_index_ch = Channel.fromPath(params.genome_index).collect()
@@ -46,10 +44,6 @@ workflow {
     
     input_fastq_ch.each {
         
-        // STAR_INDEX_GENOME(
-        //     params.genome_fa
-        // )
-        // genome_index = STAR_INDEX_GENOME.out.index
         FASTQC_FASTQ(
             input_fastq_ch
         )
@@ -83,7 +77,6 @@ workflow {
         )
         star_mapped_bam_1 = ALIGN_FASTQ_1.out.star_mapped_bam
         TECTOOL_1(
-            bam_low_dupl_tupl,
             star_mapped_bam_1,
             annotation_gtf_ch, 
             polya_sites_bed_ch,
@@ -97,26 +90,19 @@ workflow {
         )
         star_mapped_bam_2 = ALIGN_FASTQ_2.out.star_mapped_bam
         TECTOOL_2(
-            bam_low_dupl_tupl,
             star_mapped_bam_2,
-            annotation_gtf_ch, 
+            annotation_gtf_ch,
             polya_sites_bed_ch,
             genome_fa_ch
         )
         enriched_gtf_2 = TECTOOL_2.out.enriched_gtf
-        // MERGE 2 enriched GTFs and run STRINGTIE on original BAM
-        BEDTOOLS_MERGE(
+        // MERGE 2 enriched GTFs with TECtool script
+        TECTOOL_MERGE(
             bam_low_dupl_tupl,
             enriched_gtf_1,
             enriched_gtf_2
         )
-        merged_gtf = BEDTOOLS_MERGE.out.merged_gtf
-        // STRINGTIE_QUANTIFY(
-        //     bam_low_dupl_tupl,
-        //     merged_gtf
-        // )
-        // stringtie_gtf = STRINGTIE_QUANTIFY.out.stringtie_gtf
-        // STRINGTIE_COUNT_MATRIX(stringtie_gtf)
+        merged_gtf = TECTOOL_MERGE.out.merged_gtf
         SALMON_TRANSCRIPTOME(
             merged_gtf,
             genome_fa_ch
@@ -132,12 +118,18 @@ workflow {
             fastq2_tuple
         )
         salmon_counts = SALMON_QUANTIFY.out.salmon_counts
-        BEDTOOLS_FILTER_QUANT(
-            merged_gtf,
-            polya_sites_bed_ch,
-            salmon_counts
+        // BEDTOOLS_FILTER_QUANT(
+        //     merged_gtf,
+        //     polya_sites_bed_ch,
+        //     salmon_counts
+        // )
+        // filter_quant_results = BEDTOOLS_FILTER_QUANT.out.filtered_quant
+        // Separate IR workflow
+        INTRON_RETENTION(
+            bam_low_dupl_tupl,
+            annotation_gtf_ch
         )
-        filter_quant_results = BEDTOOLS_FILTER_QUANT.out.filtered_quant
+        intron_retention = INTRON_RETENTION.out.INTRON_RETENTION_MATRIX
     }
 }
 
