@@ -1,14 +1,14 @@
 IRworkflow.py is used to extract the count of reads that supports (1) intron retention events (2) splicing at spliced sites.
 
 ```
-python IRworkflow.py --a <gtf file> --bam <bam file> --out <output folder>
+python IRworkflow.py --annotation <gtf file> --bam <bam file> --out <output folder>
 ```
 
 **Possible options**:
 
-`--f`: If specify this option, the step of filtering multimappers will be skipped. By default, when not specifying this option, multimappers will be filtered. However, filtering is often recommended, and we offer this option in case the filtering process is done beforehand and you would like to save some computational efforts.
+`--filtered_input`, `-f`: If specify this option, the step of filtering multimappers will be skipped. By default, when not specifying this option, multimappers will be filtered. However, filtering is often recommended, and we offer this option in case the filtering process is done beforehand and you would like to save some computational efforts.
 
-`--read_orientation`: Options are `SR` or `SF`, in which "SR" stands for first read being opposite strand, and "SF" stands for first read being the same strand. Default is `SR`.
+`--read_orientation`, `-r`: Options are `SR` or `SF`, in which "SR" stands for first read being opposite strand, and "SF" stands for first read being the same strand. Default is `SR`.
 
 **Inputs** are:
 

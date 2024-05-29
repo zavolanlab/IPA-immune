@@ -1,40 +1,92 @@
 import os
+import logging
 import pandas as pd
+import subprocess as sp
 from argparse import ArgumentParser, RawTextHelpFormatter
-import subprocess
+
+def setup_logging(verbosity: str = 'INFO') -> None:
+    """Configure logging.
+
+    Args:
+        verbosity: Level of logging verbosity.
+    """
+    logging.basicConfig(
+        level=verbosity,
+        format="[%(asctime)s %(levelname)s] %(message)s",
+        datefmt='%Y-%m-%d %H:%M:%S',
+    )
+
+LOGGER = logging.getLogger(__name__)
 
 pd.options.mode.chained_assignment = None
 
-parser = ArgumentParser(description="Intron retention quantification arguments",
-                        formatter_class=RawTextHelpFormatter)
-
+parser = ArgumentParser(
+    description="Intron retention quantification arguments",
+    formatter_class=RawTextHelpFormatter
+)
 
 # gtf file input
-parser.add_argument('--a', type = str, required = True,
-                    help = "The file path in gtf format of the annotation file")
+parser.add_argument(
+    '-a',
+    '--annotation',
+    dest = "annotation",
+    type = str,
+    required = True,
+    help = "The file path in gtf format of the annotation file"
+)
 
 # bam file input
-parser.add_argument('--bam', type = str, required = True,
-                    help = "The file path in bam format output by STAR")
+parser.add_argument(
+    '-b',
+    '--bam',
+    dest = "bam",
+    type = str,
+    required = True,
+    help = "The file path in bam format output by STAR"
+)
 
 # output table of Spliced Sites
-parser.add_argument('--out', type = str, required = True,
-                    help = "The output path for the table of the spliced sites")
+parser.add_argument(
+    '-o',
+    '--out',
+    dest = "out",
+    type = str,
+    required = True,
+    help = "The output path for the table of the spliced sites"
+)
 
 # whether to filter multimappers
-parser.add_argument('--f', help = "Specify this option to skip filtering multimappers",
-                    action = "store_true")
+parser.add_argument(
+    '-f',
+    '--filtered_input',
+    dest = "filtered",
+    help = "Specify this option to skip filtering multimappers",
+    action = "store_true"
+)
 
 # specify libType
 ### "SF" stands for "first read same strand"
 ### "SR" stands for "first read negative strand"
 ### input reads should be paired
-parser.add_argument('--read_orientation', choices = ['SF', 'SR'], default = 'SR',
-                    help = "Specify whether the first read is on the same strand or the opposite strand")
+parser.add_argument(
+    '-r',
+    '--read_orientation',
+    dest = "read_orientation",
+    choices = ['SF', 'SR'],
+    default = 'SR',
+    help = "Specify whether the first read is on the same strand or the opposite strand"
+)
 
 options = parser.parse_args()
 
+# Set up logging
+setup_logging()
 
+# Check if output dir exists, create it otherwise
+os.makedirs(options.out, exist_ok=True)
+
+# Determine the directory of the current Python script
+script_dir = os.path.dirname(os.path.abspath(__file__))
 
 # extract file name from path
 filename = os.path.basename(options.bam)
@@ -44,10 +96,11 @@ filename = filename[0]
 
 
 # set gtf path and column names
-gtf_path = options.a
+gtf_path = options.annotation
 gtf_columns = ['chr', 'source', 'feature', 'start', 'end', 'score', 'strand', 'frame', 'attribute']
 
 # read gtf file
+LOGGER.info("Reading GTF file...")
 gtf_df = pd.read_csv(gtf_path, sep = '\t', comment = '#',
                      header = None, names = gtf_columns)
 
@@ -74,7 +127,7 @@ reverse = exons[exons['strand'] == '-']
 
 
 ### extract the spliced sites ###
-
+LOGGER.info("Extracting spliced sites...")
 # forward and extracting start position
 # delete the first exon in every transcript because they are the starting point of genes
 forward_A = forward[forward['is_min'] == False]
@@ -130,11 +183,12 @@ sj_path = os.path.join(options.out, sj_basename)
 
 # this script is originally from
 # "https://github.com/alexdobin/STAR/blob/master/extras/scripts/sjFromSAMcollapseUandM.awk"
-awk_script = "sjFromSAM.awk"
+awk_script = os.path.join(script_dir, "sjFromSAM.awk")
 
 # generate sj-like file from bam file
+LOGGER.info("Generating SJ-like file...")
 command = f"samtools view -h {options.bam} | awk -f {awk_script} | sort -V > {sj_path}"
-subprocess.run(command, shell = True)
+sp.run(command, shell = True)
 
 # set column names
 sj_columns = ['chr', 'start', 'end', 'readReverse', 'mateReverse', 'firstInPair', 'secondInPair']
@@ -199,7 +253,7 @@ sj_reverse = sj_df[sj_df['strand'] == '-']
 
 
 ### extract the spliced sites ###
-
+LOGGER.info("Extracting spliced sites...")
 # SJ.out.tab use the start and end of *intron*
 
 # forward and extracting start position
@@ -288,12 +342,13 @@ merged_df.to_csv(merged_path, sep = '\t', index = False, header = False)
 filtered_reads_basename = filename + "_filteredReads.bed"
 filtered_reads_path = os.path.join(options.out, filtered_reads_basename)
 
-if options.f:
+if options.filtered:
     command = f"bedtools bamtobed -split -i {options.bam} | awk 'BEGIN{{OFS=\"\\t\"}} {{$4=\"-\"; $5=0; print}}' > {filtered_reads_path}"
 else:
+    LOGGER.info("Filtering multimappers...")
     command = f"samtools view -h -q 255 {options.bam} | samtools view -h -b | bedtools bamtobed -split -i | awk 'BEGIN{{OFS=\"\\t\"}} {{$4=\"-\"; $5=0; print}}' > {filtered_reads_path}" 
 
-subprocess.run(command, shell = True)
+sp.run(command, shell = True)
 
 
 
@@ -321,12 +376,13 @@ filtered_countDup.to_csv(filtered_count_path, sep = '\t', index = False, header 
 
 
 # bedtools intersect command
+LOGGER.info("Running bedtools intersect...")
 intersect_basename = filename + "_intersect.bed"
 intersect_path = os.path.join(options.out, intersect_basename)
 intersect_log_basename = filename + "_intersect.log"
 intersect_log_path = os.path.join(options.out, intersect_log_basename)
 command = f"bedtools intersect -wa -wb -s -a {merged_path} -b {filtered_count_path} -sorted 1>{intersect_path} 2>{intersect_log_path}"
-subprocess.run(command, shell = True)
+sp.run(command, shell = True)
 
 # read only the columns needed
 intersect_columns = ['chr', 'SS_start', 'SS_end', 'SS_name', 'SS_score', 'strand', 'r_chr', 'r_start', 'r_end', 'r_num', 'r_score', 'r_strand']
@@ -339,7 +395,7 @@ intersect_df = intersect_df[['chr', 'SS_start', 'SS_end', 'is_unknown', 'strand'
 
 
 ### intron retention ###
-
+LOGGER.info("Finding intron retention events...")
 # find intron retention event
 ir_df = intersect_df[(intersect_df['SS_start']-intersect_df['r_start']>=8)&(intersect_df['r_end']-intersect_df['SS_end']>=8)]
 # count reads that support intron retention event
@@ -366,6 +422,7 @@ SS_reads_table = SS_reads_table[['chr', 'SS_start', 'SS_end', 'is_unknown', 'str
 SS_reads_table.rename(columns = {'count': 'SS_reads_count'}, inplace = True)
 
 # merge two events
+LOGGER.info("Merging intron retention and spliced reads...")
 result = pd.merge(ir_table, SS_reads_table, how = "outer", on = ['chr', 'SS_start', 'SS_end', 'is_unknown', 'strand'])
 result = result.fillna(0)
 result[['ir_count', 'SS_reads_count']] = result[['ir_count', 'SS_reads_count']].astype(int)
@@ -377,3 +434,4 @@ result.rename(columns = {'SS_end': 'SS'}, inplace = True)
 result_basename = filename + "_result.csv"
 result_path = os.path.join(options.out, result_basename)
 result.to_csv(result_path, index = False)
+LOGGER.info("Workflow done! Result table saved at %s", result_path)
