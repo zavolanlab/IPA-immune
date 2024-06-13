@@ -67,15 +67,15 @@ workflow tectool_analysis {
         fastq2_tuple = SAMTOOLS_BAM2FASTQ.out.fastq2_tuple
 
         // FASTQ1 from BAM
-        ALIGN_FASTQ_1(fastq1_tuple, genome_index_ch)
+        ALIGN_FASTQ_1(input_bam, fastq1_tuple, genome_index_ch)
         star_mapped_bam_1 = ALIGN_FASTQ_1.out.star_mapped_bam
-        TECTOOL_1(star_mapped_bam_1, annotation_gtf_ch, polya_sites_bed_ch, genome_fa_ch)
+        TECTOOL_1(input_bam, star_mapped_bam_1, annotation_gtf_ch, polya_sites_bed_ch, genome_fa_ch)
         enriched_gtf_1 = TECTOOL_1.out.enriched_gtf
 
         // FASTQ2 from BAM
-        ALIGN_FASTQ_2(fastq2_tuple, genome_index_ch)
+        ALIGN_FASTQ_2(input_bam, fastq2_tuple, genome_index_ch)
         star_mapped_bam_2 = ALIGN_FASTQ_2.out.star_mapped_bam
-        TECTOOL_2(star_mapped_bam_2, annotation_gtf_ch, polya_sites_bed_ch, genome_fa_ch)
+        TECTOOL_2(input_bam, star_mapped_bam_2, annotation_gtf_ch, polya_sites_bed_ch, genome_fa_ch)
         enriched_gtf_2 = TECTOOL_2.out.enriched_gtf
 
         // MERGE 2 enriched GTFs with TECtool script

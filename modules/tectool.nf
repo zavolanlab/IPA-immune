@@ -6,34 +6,35 @@ process TECTOOL {
     label "TECtool"
     container "docker://fgypas/tectool:0.4"
     
-    tag { library }
+    tag { library_split }
 
     publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*/*.tsv"
     publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*_enriched_annotation.gtf"
     publishDir "${params.log_dir}/${library}_logs", mode: 'copy', pattern: '*.log'
     
     input:
-    tuple val(library), path(bam)
+    tuple val(library), file(bam)
+    tuple val(library_split), path(bam_split)
     path annotation_gtf
     path polya_sites_bed
     path genome_fa
     
     output:
-    tuple val(library), path('*.gtf'), emit: enriched_gtf
+    tuple val(library_split), path('*.gtf'), emit: enriched_gtf
     path '*/*.tsv', emit: tsv
 
 
     script:
     """
-    samtools index -@ ${params.threads_se} -M ${bam}
+    samtools index -@ ${params.threads_se} -M ${bam_split}
     tectool \
         --annotation ${annotation_gtf} \
         --polyasites ${polya_sites_bed} \
-        --bam ${bam} \
+        --bam ${bam_split} \
         --genome ${genome_fa} \
         --num_cores ${params.threads_se} \
-        --output_dir ${library}_tectool &> ${library}_tectool.log
-    mv ${library}_tectool/enriched_annotation.gtf ${library}_enriched_annotation.gtf  
+        --output_dir ${library_split}_tectool &> ${library_split}_tectool.log
+    mv ${library_split}_tectool/enriched_annotation.gtf ${library_split}_enriched_annotation.gtf  
     """
 }
 
