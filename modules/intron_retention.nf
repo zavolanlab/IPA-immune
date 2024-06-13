@@ -4,7 +4,7 @@ process INTRON_RETENTION{
     
     tag { library }
 
-    publishDir "${params.out_dir}", mode: 'copy', pattern: '*_intron_retention_matrix.csv'
+    publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: '*_intron_retention_matrix.csv'
     
     input:
     tuple val(library), path(bam)

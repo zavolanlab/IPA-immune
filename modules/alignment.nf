@@ -81,7 +81,7 @@ process STAR_ALIGN_SE {
     label "star"
     label "mapping"
     
-    tag { library } 
+    tag { library_split } 
 
     publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.Aligned.sortedByCoord.out.bam"
     // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.tab"
@@ -90,11 +90,12 @@ process STAR_ALIGN_SE {
     publishDir "${params.log_dir}/${library}_logs", mode: 'copy', pattern: '*.out'
 
     input:
-    tuple val(library), path(input_fastq)
+    tuple val(library), file(bam)
+    tuple val(library_split), path(input_fastq)
     path index
 
     output:
-    tuple val(library), path('*.Aligned.sortedByCoord.out.bam'), emit: star_mapped_bam
+    tuple val(library_split), path('*.Aligned.sortedByCoord.out.bam'), emit: star_mapped_bam
     path '*.tab', emit: counts
     path '*.Unmapped*', emit: unmapped
     path '*.log', emit: log
@@ -108,7 +109,7 @@ process STAR_ALIGN_SE {
         --genomeLoad NoSharedMemory \
         --readFilesIn ${input_fastq} \
         --limitOutSJcollapsed 5000000 \
-        --outFileNamePrefix ${library}. \
+        --outFileNamePrefix ${library_split}. \
         --outReadsUnmapped Fastx \
         --outSAMtype BAM   SortedByCoordinate \
         --outSAMattributes All \
@@ -118,6 +119,6 @@ process STAR_ALIGN_SE {
         --outFilterMultimapNmax 500000000 \
         --alignEndsType Local \
         --twopassMode None \
-        &> ${library}_map_star.log
+        &> ${library_split}_map_star.log
     """
 }
