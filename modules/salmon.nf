@@ -33,12 +33,14 @@ process SALMON_INDEX {
     tag { library }
 
     // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: '*'
-    
+    publishDir "${params.log_dir}/${library}_logs", mode: 'copy', pattern: '*.log'
+
     input:
     tuple val(library), file(fasta)
 
     output:
-    tuple val(library), path('*'), emit: salmon_index
+    tuple val(library), path('*_transcripts_index'), emit: salmon_index
+    path '*.log', emit: log
 
     script:
     """
@@ -46,7 +48,7 @@ process SALMON_INDEX {
         --transcripts ${fasta} \
         --index ${library}_transcripts_index \
         --keepDuplicates \
-        --threads ${params.threads_pe}
+        --threads ${params.threads_pe} &> ${library}_salmon_index.log
     """
 }
 
@@ -57,7 +59,8 @@ process SALMON_QUANTIFY {
     tag { library }
 
     publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: '*_quant.tsv'
-    
+    publishDir "${params.log_dir}/${library}_logs", mode: 'copy', pattern: '*.log'
+
     input:
     tuple val(library), path(index)
     tuple val(library_1), path(fastq_1)
@@ -65,6 +68,7 @@ process SALMON_QUANTIFY {
     
     output:
     tuple val(library), path('*_quant.tsv'), emit: salmon_counts
+    path '*.log', emit: log
 
     script:
     """
@@ -75,7 +79,7 @@ process SALMON_QUANTIFY {
         --validateMappings \
         --seqBias \
         --output ${library}_transcript_quant \
-        --threads ${params.threads_pe}
+        --threads ${params.threads_pe} &> ${library}_salmon_quant.log
     mv ${library}_transcript_quant/quant.sf ${library}_quant.tsv
     """
 }
