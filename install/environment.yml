@@ -16,5 +16,7 @@ dependencies:
   - bedops
   - gffread
   - gtfparse
+  - zgtf
+  - tin-score-calculation
   # - pip:
   #   - git+https://github.com/balajtimate/TECtool@master
