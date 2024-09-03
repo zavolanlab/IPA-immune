@@ -9,6 +9,7 @@ process TECTOOL {
     tag { library_split }
 
     publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*/*.tsv"
+    publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.bai"
     publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*_enriched_annotation.gtf"
     publishDir "${params.log_dir}/${library}_logs", mode: 'copy', pattern: '*.log'
     

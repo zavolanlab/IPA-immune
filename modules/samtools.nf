@@ -61,8 +61,8 @@ process SAMTOOLS_BAM2FASTQ {
     
     tag { library }
     
-    // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*_1.fastq"
-    // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*_2.fastq"
+    publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*_1.fastq"
+    publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*_2.fastq"
     publishDir "${params.log_dir}/${library}_logs", mode: 'copy', pattern: '*.log'
 
     input:
