@@ -30,6 +30,8 @@ include { SALMON_TRANSCRIPTOME } from './modules/salmon.nf'
 include { SALMON_INDEX } from './modules/salmon.nf'
 include { SALMON_QUANTIFY } from './modules/salmon.nf'
 include { INTRON_RETENTION } from './modules/intron_retention.nf'
+include { TIN_GTF2BED } from './modules/tin_score.nf'
+include { CALCULATE_TIN_SCORES } from './modules/tin_score.nf'
 
 genome_index_ch = Channel.fromPath(params.genome_index, checkIfExists: true).collect()
 annotation_gtf_ch = Channel.fromPath(params.annotation_gtf, checkIfExists: true).collect()
@@ -53,6 +55,22 @@ workflow preprocessing {
 
     emit:
         bam_low_dupl_tupl
+}
+
+// Subworkflow for TECtool analysis and downstream steps
+workflow calculate_tin_scores {
+    take:
+        input_bam
+
+    main:
+        // Convert BAM to 2 FASTQ files
+        TIN_GTF2BED(annotation_gtf_ch)
+        transcripts_bed12 = TIN_GTF2BED.out.transcripts_bed12
+        CALCULATE_TIN_SCORES(input_bam, transcripts_bed12)
+        tin_scores_tsv = CALCULATE_TIN_SCORES.out.tin_scores_tsv
+
+    emit:
+        tin_scores_tsv
 }
 
 // Subworkflow for TECtool analysis and downstream steps
@@ -113,6 +131,7 @@ workflow {
             preprocessing(input_fastq_ch)
             tectool_analysis(preprocessing.out.bam_low_dupl_tupl)
             intron_retention(preprocessing.out.bam_low_dupl_tupl)
+            calculate_tin_scores(preprocessing.out.bam_low_dupl_tupl)
         }
     }
     if (params.run_mode == 'preprocessing') {
@@ -132,6 +151,12 @@ workflow {
         input_bam_ch = Channel.fromPath(params.input_bam, checkIfExists: true).map { bam_path -> tuple(bam_path.baseName, bam_path) }
         input_bam_ch.each {
             tectool_analysis(input_bam_ch)
+        }
+    }
+    if (params.run_mode == 'tin_score') {
+        input_bam_ch = Channel.fromPath(params.input_bam, checkIfExists: true).map { bam_path -> tuple(bam_path.baseName, bam_path) }
+        input_bam_ch.each {
+            calculate_tin_scores(input_bam_ch)
         }
     }
     if (params.run_mode == 'intron') {

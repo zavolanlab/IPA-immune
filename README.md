@@ -66,6 +66,7 @@ Outputs:
 - `analysis`: to only run the postprocessing part of the workflow (quantification of IPA usage and intron retention) - requires `input_bam`
 - `tectool`: to only run the IPA usage quantification, using TECtool - requires `input_bam`
 - `intron`: to only run the intron retention quantification subworkflow - requires `input_bam`
+- `tin_score`: to only run the TIN score calculation subworkflow - requires `input_bam`
 
 In the case of `full` and `preprocessing` modes, the `input_fastq` is required, using a wildcard character, e.g.: `--input_fastq='test_data\*{1,2}.fastq'`
 

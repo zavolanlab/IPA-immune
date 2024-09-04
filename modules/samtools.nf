@@ -2,26 +2,6 @@
 
 nextflow.enable.dsl=2
 
-// process SAMTOOLS_INDEX {
-// 
-//     label "samtools"
-//     
-//     tag { library }
-// 
-//     // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.bai"
-// 
-//     input:
-//     tuple val(library), path(bam)
-// 
-//     output:
-//     tuple val(library), path('*.bai'), emit: index
-// 
-//     script:
-//     """
-//     samtools index -@ ${params.threads_se} -M ${bam}
-//     """
-// }
-
 process SAMTOOLS_GET_UNIQUE_MAPPERS {
 
     label "samtools"
@@ -81,8 +61,8 @@ process SAMTOOLS_BAM2FASTQ {
     
     tag { library }
     
-    // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*_1.fastq"
-    // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*_2.fastq"
+    publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*_1.fastq"
+    publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*_2.fastq"
     publishDir "${params.log_dir}/${library}_logs", mode: 'copy', pattern: '*.log'
 
     input:
@@ -91,6 +71,7 @@ process SAMTOOLS_BAM2FASTQ {
     output:  
     tuple val("${library}_1"), path("${library}_1.fastq"), emit: fastq1_tuple
     tuple val("${library}_2"), path("${library}_2.fastq"), emit: fastq2_tuple
+    path '*.log', emit: log
 
     script:
     """
