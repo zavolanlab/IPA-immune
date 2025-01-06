@@ -79,3 +79,23 @@ process SAMTOOLS_BAM2FASTQ {
     samtools fastq -@ ${params.threads_pe} -1 "${library}_1.fastq" -2 "${library}_2.fastq" -0 /dev/null -s /dev/null ${library}.out.querysort.bam &> ${library}_bam2fastq.log
     """
 }
+
+process SAMTOOLS_DEPTH {
+
+    label "samtools"
+
+    tag { library }
+
+    publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.coverage.bed"
+
+    input:
+    tuple val(library), path(input_bam)
+
+    output:
+    tuple val(library), path('*.coverage.bed'), emit: depth_bed
+
+    script:
+    """
+    samtools depth -@ ${params.threads_pe} -s ${input_bam} -o ${library}.coverage.bed
+    """
+}

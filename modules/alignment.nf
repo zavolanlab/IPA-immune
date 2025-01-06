@@ -37,7 +37,7 @@ process STAR_ALIGN_PE {
 
     tag { library }
 
-    // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.Aligned.sortedByCoord.out.bam"
+    publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.Aligned.sortedByCoord.out.bam"
     // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.tab"
     // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.Unmapped*"
     publishDir "${params.log_dir}/${library}_logs", mode: 'copy', pattern: '*.log'
@@ -61,6 +61,7 @@ process STAR_ALIGN_PE {
         --genomeDir ${index} \
         --genomeLoad NoSharedMemory \
         --readFilesIn ${reads} \
+        --readFilesCommand zcat \
         --limitOutSJcollapsed 5000000 \
         --outFileNamePrefix ${library}. \
         --outReadsUnmapped Fastx \
@@ -81,7 +82,7 @@ process STAR_ALIGN_SE {
     label "star"
     label "mapping"
     
-    tag { library_split } 
+    tag { library } 
 
     publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.Aligned.sortedByCoord.out.bam"
     // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.tab"
@@ -90,12 +91,12 @@ process STAR_ALIGN_SE {
     publishDir "${params.log_dir}/${library}_logs", mode: 'copy', pattern: '*.out'
 
     input:
-    tuple val(library), file(bam)
-    tuple val(library_split), path(input_fastq)
+    tuple val(library), path(input_fastq)
+    // tuple val(library_split), path(input_fastq)
     path index
 
     output:
-    tuple val(library_split), path('*.Aligned.sortedByCoord.out.bam'), emit: star_mapped_bam
+    tuple val(library), path('*.Aligned.sortedByCoord.out.bam'), emit: star_mapped_bam_tuple
     path '*.tab', emit: counts
     path '*.Unmapped*', emit: unmapped
     path '*.log', emit: log
@@ -108,8 +109,9 @@ process STAR_ALIGN_SE {
         --genomeDir ${index} \
         --genomeLoad NoSharedMemory \
         --readFilesIn ${input_fastq} \
+        --readFilesCommand zcat \
         --limitOutSJcollapsed 5000000 \
-        --outFileNamePrefix ${library_split}. \
+        --outFileNamePrefix ${library}. \
         --outReadsUnmapped Fastx \
         --outSAMtype BAM   SortedByCoordinate \
         --outSAMattributes All \
@@ -117,8 +119,8 @@ process STAR_ALIGN_SE {
         --outSAMattrIHstart 0 \
         --outFilterType BySJout \
         --outFilterMultimapNmax 500000000 \
-        --alignEndsType Local \
+        --alignEndsType EndToEnd \
         --twopassMode None \
-        &> ${library_split}_map_star.log
+        &> ${library}_map_star.log
     """
 }

@@ -17,7 +17,7 @@ log.info """\
 include { FASTQC as FASTQC_FASTQ } from './modules/fastqc.nf'
 include { FASTQC as FASTQC_BAM } from './modules/fastqc.nf'
 include { STAR_ALIGN_PE } from './modules/alignment.nf'
-include { STAR_ALIGN_SE as ALIGN_FASTQ_1 } from './modules/alignment.nf'
+include { STAR_ALIGN_SE } from './modules/alignment.nf'
 include { STAR_ALIGN_SE as ALIGN_FASTQ_2 } from './modules/alignment.nf'
 include { SAMTOOLS_GET_UNIQUE_MAPPERS } from './modules/samtools.nf'
 include { SAMTOOLS_GET_LOW_DUP_READS } from './modules/samtools.nf'
@@ -32,6 +32,7 @@ include { SALMON_QUANTIFY } from './modules/salmon.nf'
 include { INTRON_RETENTION } from './modules/intron_retention.nf'
 include { TIN_GTF2BED } from './modules/tin_score.nf'
 include { CALCULATE_TIN_SCORES } from './modules/tin_score.nf'
+include { SAMTOOLS_DEPTH } from './modules/samtools.nf'
 
 genome_index_ch = Channel.fromPath(params.genome_index, checkIfExists: true).collect()
 annotation_gtf_ch = Channel.fromPath(params.annotation_gtf, checkIfExists: true).collect()
@@ -45,16 +46,19 @@ workflow preprocessing {
 
     main:
         FASTQC_FASTQ(input_fastq)
-        STAR_ALIGN_PE(input_fastq, genome_index_ch)
-        star_mapped_bam_tuple = STAR_ALIGN_PE.out.star_mapped_bam_tuple
-        SAMTOOLS_GET_UNIQUE_MAPPERS(star_mapped_bam_tuple)
-        filtered_bam_tuple = SAMTOOLS_GET_UNIQUE_MAPPERS.out.filtered_bam_tuple
-        SAMTOOLS_GET_LOW_DUP_READS(filtered_bam_tuple)
-        bam_low_dupl_tupl = SAMTOOLS_GET_LOW_DUP_READS.out.bam_low_dupl_tupl
-        FASTQC_BAM(bam_low_dupl_tupl)
+        // STAR_ALIGN_PE(input_fastq, genome_index_ch)
+        // star_mapped_bam_tuple = STAR_ALIGN_PE.out.star_mapped_bam_tuple
+
+        STAR_ALIGN_SE(input_fastq, genome_index_ch)
+        star_mapped_bam_tuple = STAR_ALIGN_SE.out.star_mapped_bam_tuple
+        // SAMTOOLS_GET_UNIQUE_MAPPERS(star_mapped_bam_tuple)
+        // filtered_bam_tuple = SAMTOOLS_GET_UNIQUE_MAPPERS.out.filtered_bam_tuple
+        // SAMTOOLS_GET_LOW_DUP_READS(filtered_bam_tuple)
+        // bam_low_dupl_tupl = SAMTOOLS_GET_LOW_DUP_READS.out.bam_low_dupl_tupl
+        // FASTQC_BAM(bam_low_dupl_tupl)
 
     emit:
-        bam_low_dupl_tupl
+        star_mapped_bam_tuple
 }
 
 // Subworkflow for TECtool analysis and downstream steps
@@ -135,7 +139,7 @@ workflow {
         }
     }
     if (params.run_mode == 'preprocessing') {
-        input_fastq_ch = Channel.fromFilePairs(params.input_fastq, checkIfExists: true)
+        input_fastq_ch = Channel.fromPath(params.input_fastq, checkIfExists: true).map { input_fastq_path -> tuple(input_fastq_path.baseName, input_fastq_path) }
         input_fastq_ch.each {
             preprocessing(input_fastq_ch)
         }
@@ -163,6 +167,13 @@ workflow {
         input_bam_ch = Channel.fromPath(params.input_bam, checkIfExists: true).map { bam_path -> tuple(bam_path.baseName, bam_path) }
         input_bam_ch.each {
             intron_retention(input_bam_ch)
+        }
+    }
+    if (params.run_mode == 'coverage') {
+        input_bam_ch = Channel.fromPath(params.input_bam, checkIfExists: true).map { bam_path -> tuple(bam_path.baseName, bam_path) }
+        input_bam_ch.each {
+            SAMTOOLS_DEPTH(input_bam_ch)
+            coverage = SAMTOOLS_DEPTH.out.depth_bed
         }
     }
 }
