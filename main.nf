@@ -15,10 +15,8 @@ log.info """\
 
 // import modules
 include { FASTQC as FASTQC_FASTQ } from './modules/fastqc.nf'
-include { FASTQC as FASTQC_BAM } from './modules/fastqc.nf'
-include { STAR_ALIGN_PE } from './modules/alignment.nf'
-include { STAR_ALIGN_SE } from './modules/alignment.nf'
-include { STAR_ALIGN_SE as ALIGN_FASTQ_2 } from './modules/alignment.nf'
+include { FASTQC_BAM } from './modules/fastqc.nf'
+include { STAR_ALIGN_GENERIC }   from './modules/alignment.nf'
 include { SAMTOOLS_GET_UNIQUE_MAPPERS } from './modules/samtools.nf'
 include { SAMTOOLS_GET_LOW_DUP_READS } from './modules/samtools.nf'
 include { SAMTOOLS_BAM2FASTQ } from './modules/samtools.nf'
@@ -33,29 +31,45 @@ include { INTRON_RETENTION } from './modules/intron_retention.nf'
 include { TIN_GTF2BED } from './modules/tin_score.nf'
 include { CALCULATE_TIN_SCORES } from './modules/tin_score.nf'
 include { SAMTOOLS_DEPTH } from './modules/samtools.nf'
+include { FEATURECOUNTS_GENE_CDS } from './modules/featurecounts.nf'
 
-genome_index_ch = Channel.fromPath(params.genome_index, checkIfExists: true).collect()
-annotation_gtf_ch = Channel.fromPath(params.annotation_gtf, checkIfExists: true).collect()
-polya_sites_bed_ch = Channel.fromPath(params.polya_sites_bed, checkIfExists: true).collect()
-genome_fa_ch = Channel.fromPath(params.genome_fa, checkIfExists: true).collect()
+// resources as singletons
+genome_index_ch = Channel
+  .fromPath(params.genome_index, checkIfExists: true)
+  .ifEmpty { error "Missing --genome_index (STAR index directory)" }
+  .first()
+annotation_gtf_ch = Channel.fromPath(params.annotation_gtf, checkIfExists: true).first()
+polya_sites_bed_ch = Channel.fromPath(params.polya_sites_bed, checkIfExists: true).first()
+genome_fa_ch = Channel.fromPath(params.genome_fa, checkIfExists: true).first()
+
+read_files_ch = Channel
+  .fromFilePairs(params.reads, size: 2, checkIfExists: true)
+  // (Optional) sanity print one line per sample:
+  // .view { id, pair -> "ID=${id} :: ${pair*.name.join(', ')}" }
+  .map { id, pair ->
+      def meta = [ id: id as String, single_end: false ]
+      tuple(meta, pair)                 // (meta, [r1,r2])
+  }
+  .ifEmpty { error "Cannot find any reads matching: ${params.reads}" }
+
+read_files_ch.view { meta, files -> "ID=${meta.id} SE=${meta.single_end} N=${files.size()} :: ${files*.name.join(', ')}" }
 
 // Subworkflow for preprocessing steps
 workflow preprocessing {
     take:
-        input_fastq
+        read_files_ch     // (meta, reads)
+        genome_index_ch
 
     main:
-        FASTQC_FASTQ(input_fastq)
-        // STAR_ALIGN_PE(input_fastq, genome_index_ch)
-        // star_mapped_bam_tuple = STAR_ALIGN_PE.out.star_mapped_bam_tuple
-
-        STAR_ALIGN_SE(input_fastq, genome_index_ch)
-        star_mapped_bam_tuple = STAR_ALIGN_SE.out.star_mapped_bam_tuple
+        FASTQC_FASTQ(read_files_ch)
+        STAR_ALIGN_GENERIC(read_files_ch, genome_index_ch)
+        star_mapped_bam_tuple = STAR_ALIGN_GENERIC.out.star_mapped_bam_tuple
         // SAMTOOLS_GET_UNIQUE_MAPPERS(star_mapped_bam_tuple)
         // filtered_bam_tuple = SAMTOOLS_GET_UNIQUE_MAPPERS.out.filtered_bam_tuple
         // SAMTOOLS_GET_LOW_DUP_READS(filtered_bam_tuple)
         // bam_low_dupl_tupl = SAMTOOLS_GET_LOW_DUP_READS.out.bam_low_dupl_tupl
-        // FASTQC_BAM(bam_low_dupl_tupl)
+        FEATURECOUNTS_GENE_CDS(star_mapped_bam_tuple, annotation_gtf_ch)
+        FASTQC_BAM(star_mapped_bam_tuple)
 
     emit:
         star_mapped_bam_tuple
@@ -139,10 +153,7 @@ workflow {
         }
     }
     if (params.run_mode == 'preprocessing') {
-        input_fastq_ch = Channel.fromPath(params.input_fastq, checkIfExists: true).map { input_fastq_path -> tuple(input_fastq_path.baseName, input_fastq_path) }
-        input_fastq_ch.each {
-            preprocessing(input_fastq_ch)
-        }
+        preprocessing(read_files_ch, genome_index_ch)
     }
     if (params.run_mode == 'analysis') {
         input_bam_ch = Channel.fromPath(params.input_bam, checkIfExists: true).map { bam_path -> tuple(bam_path.baseName, bam_path) }

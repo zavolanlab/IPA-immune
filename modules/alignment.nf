@@ -30,6 +30,72 @@ process STAR_INDEX_GENOME {
     """
 }
 
+process STAR_ALIGN_GENERIC {
+
+    label 'star'
+    tag { meta.id }
+
+    publishDir "${params.out_dir}/${meta.id}_results", mode: 'copy', pattern: "*.Aligned.sortedByCoord.out.bam"
+    publishDir "${params.out_dir}/${meta.id}_results", mode: 'copy', pattern: "*.tab"
+    publishDir "${params.out_dir}/${meta.id}_results", mode: 'copy', pattern: "*.Unmapped*"
+    publishDir "${params.log_dir}/${meta.id}_logs", mode: 'copy', pattern: '*.log'
+    publishDir "${params.log_dir}/${meta.id}_logs", mode: 'copy', pattern: '*.out'
+
+    input:
+    tuple val(meta), path(reads)    // reads is List<Path> (len 1 for SE, len 2 for PE)
+    path index
+
+    output:
+    tuple val(meta), path("${meta.id}.Aligned.sortedByCoord.out.bam"), emit: star_mapped_bam_tuple
+    path '*.tab', emit: counts
+    path '*.Unmapped*', emit: unmapped
+    path '*.log', emit: log
+    path '*.out', emit: out
+
+    script:
+    // Flatten to a list and prepare mates like nf-core
+    def files  = [reads].flatten()
+    def reads1 = []
+    def reads2 = []
+    if( meta.single_end ) {
+        files.each { reads1 << it }
+    } else {
+        files.eachWithIndex { v, ix -> (ix & 1 ? reads2 : reads1) << v }
+    }
+
+    // STAR accepts multiple chunks comma-separated: R1a,R1b  R2a,R2b
+    def r1 = reads1*.toString().join(',')
+    def r2 = reads2*.toString().join(',')
+
+    // gzip detection
+    def gz = files.every { it.name.endsWith('.gz') }
+    def readCmd = gz ? '--readFilesCommand zcat' : ''
+
+    // threads according to SE/PE
+    def threads = meta.single_end ? params.threads_se : params.threads_pe
+
+    """
+    STAR \\
+        --runMode alignReads \\
+        --runThreadN ${threads} \\
+        --genomeDir ${index} \\
+        --readFilesIn ${meta.single_end ? r1 : "${r1} ${r2}"} \\
+        ${readCmd} \\
+        --limitOutSJcollapsed 5000000 \\
+        --outFileNamePrefix ${meta.id}. \\
+        --outReadsUnmapped Fastx \\
+        --outSAMtype BAM SortedByCoordinate \\
+        --outSAMattributes All \\
+        --outBAMsortingThreadN 8 \\
+        --outSAMattrIHstart 0 \\
+        --outFilterType BySJout \\
+        --outFilterMultimapNmax 500000000 \\
+        --alignEndsType Local \\
+        --twopassMode None \\
+        &> ${meta.id}_map_star.log
+    """
+}
+
 process STAR_ALIGN_PE {
 
     label "star"
@@ -38,8 +104,8 @@ process STAR_ALIGN_PE {
     tag { library }
 
     publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.Aligned.sortedByCoord.out.bam"
-    // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.tab"
-    // publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.Unmapped*"
+    publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.tab"
+    publishDir "${params.out_dir}/${library}_results", mode: 'copy', pattern: "*.Unmapped*"
     publishDir "${params.log_dir}/${library}_logs", mode: 'copy', pattern: '*.log'
     publishDir "${params.log_dir}/${library}_logs", mode: 'copy', pattern: '*.out'
 
