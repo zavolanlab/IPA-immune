@@ -1,20 +1,25 @@
-# IPA-immune
-A Nextflow pipeline for the multi-omics analysis of IPA-derived isoforms in cancer.
+# PTA_MASLD
+This repository contains the computational workflows and analyses of post-transcriptional alterations (PTAs) in metabolic dysfunction-associated steatotic liver disease (MASLD) and hepatocellular carcinoma (HCC) project. 
+
 > DISCLAIMER: The workflow is currently in development and still in an experimental stage
 
-### Installation
+## Background
 
-#### 1. Clone the repository
+This project investigates the role of **post-transcriptional alterations (PTAs)** — alternative polyadenylation (APA) and alternative splicing (AS), including intron retention — in the progression from metabolic dysfunction-associated steatotic liver disease (MAFL/MAFLD) to metabolic dysfunction associated steatohepatitis (MASH) and hepatocellular carcinoma (HCC). The ultimate goal is to identify PTA-derived isoforms that act as cancer driver events, novel neoantigens, or predictive biomarkers of immunotherapy response.
+
+## Installation
+
+### 1. Clone the repository
 
 Go to the desired directory/folder on your file system, then clone/get the 
 repository and move into the respective directory with:
 
 ```bash
-git clone https://github.com/zavolanlab/IPA-immune
-cd IPA-immune
+git clone https://github.com/zavolanlab/PTA_MASLD
+cd PTA_MASLD
 ```
 
-#### 2. Conda and Mamba installation
+### 2. Conda and Mamba installation
 
 Workflow dependencies can be conveniently installed with the [Conda](https://docs.conda.io/projects/conda/en/stable/)
 package manager. We recommend that you install [Miniconda](https://docs.anaconda.com/free/miniconda/miniconda-install/)
@@ -24,14 +29,14 @@ for your system (Linux). Be sure to select the Python 3 option.
 conda install -y mamba -n base -c conda-forge
 ```
 
-#### 3. Create environment
+### 3. Create environment
 
 Install the remaining dependencies with:
 ```bash
 mamba env create -f install/environment.yml
 ```
 
-#### 4. Activate environment
+### 4. Activate environment
 
 Activate the Conda environment with:
 
@@ -39,12 +44,14 @@ Activate the Conda environment with:
 conda activate ipa-immune
 ```
 
-### Workflow
+## Workflow
 
-The workflow makes use of 3 separate subworkflows:
-1. Global quantification of intronic PAS usage (using [TECtool](https://github.com/balajtimate/TECtool))
-2. Local quantification of intronic PAS
-3. Local quantification of intron retention at splice sites
+The pipeline processes bulk RNA-seq data (paired-end) and quantifies three classes of PTAs, alongside standard gene expression:
+
+1. **Gene expression quantification** — featureCounts (per-gene read counts) and RNA-SeQC (TPM + strict-mode counts)
+2. **Intronic poly(A) site (IPA) usage** — global quantification using [TECtool](https://github.com/balajtimate/TECtool)
+3. **Intron retention** — read support for retained introns vs. splicing at splice sites
+4. **Quality control** — FastQC, MultiQC, TIN scores
 
 Inputs:
 1. FASTQ bulk RNA-Seq files (paired) or BAM files
@@ -53,22 +60,25 @@ Inputs:
 4. BED file with IPA sites
 5. STAR INDEX directory
 
-
 Outputs:
-1. Table: raw number of reads supporting each PAS in the sample
+1. Per-sample gene count tables (featureCounts `.txt`, RNA-SeQC `.gct`)
+2. Table: raw number of reads supporting each PAS in the sample
+3. Intron retention matrix per sample
+4. TIN score tables for RNA integrity assessment
+5. MultiQC reports for FASTQ and BAM QC
 
-### Running the workflow
-#### You have the choice of running the workflow in different configurations: 
+## Running the workflow
+### You have the choice of running the workflow in different configurations: 
 (substitute one of the below options for the `<run_mode>` argument)
 
 - `full`: default, to run the full workflow (this is computationally quite heavy and should be done in a cluster environment) - requires `input_fastq`
-- `preprocessing`: to only run the preprocessing part of the workflow (alignment and filtering of low duplicate reads) - requires `input_fastq`
+- `preprocessing`: to only run the preprocessing part of the workflow (alignment, filtering, gene quantification and QC) - requires `input_fastq`
 - `analysis`: to only run the postprocessing part of the workflow (quantification of IPA usage and intron retention) - requires `input_bam`
 - `tectool`: to only run the IPA usage quantification, using TECtool - requires `input_bam`
 - `intron`: to only run the intron retention quantification subworkflow - requires `input_bam`
 - `tin_score`: to only run the TIN score calculation subworkflow - requires `input_bam`
 
-In the case of `full` and `preprocessing` modes, the `input_fastq` is required, using a wildcard character, e.g.: `--input_fastq='test_data\*{1,2}.fastq'`
+In the case of `full` and `preprocessing` modes, the `--reads` is required, using a wildcard character, e.g.: `--reads='test_data\*{1,2}.fastq'`
 
 In the case of `analysis`, `tectool` and `intron` modes, the `input_bam` is required, using a wildcard character, e.g.: `--input_bam='test_data\*.bam'`
 
@@ -101,7 +111,7 @@ nextflow main.nf -profile slurm,conda
     --input_fastq <input_fastq> \ --input_bam <input_bam>
 ```
 
-### Testing
+## Testing
 
 Download and uncompress testing data:
 
