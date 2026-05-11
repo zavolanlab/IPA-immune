@@ -31,7 +31,8 @@ include { INTRON_RETENTION } from './modules/intron_retention.nf'
 include { TIN_GTF2BED } from './modules/tin_score.nf'
 include { CALCULATE_TIN_SCORES } from './modules/tin_score.nf'
 include { SAMTOOLS_DEPTH } from './modules/samtools.nf'
-include { FEATURECOUNTS_GENE_CDS } from './modules/featurecounts.nf'
+include { FEATURECOUNTS_GENE_CDS; RNASEQC_COUNT } from './modules/featurecounts.nf'
+include { MULTIQC_FASTQ; MULTIQC_BAM } from './modules/fastqc.nf'
 
 // resources as singletons
 genome_index_ch = Channel
@@ -64,12 +65,27 @@ workflow preprocessing {
         FASTQC_FASTQ(read_files_ch)
         STAR_ALIGN_GENERIC(read_files_ch, genome_index_ch)
         star_mapped_bam_tuple = STAR_ALIGN_GENERIC.out.star_mapped_bam_tuple
-        // SAMTOOLS_GET_UNIQUE_MAPPERS(star_mapped_bam_tuple)
-        // filtered_bam_tuple = SAMTOOLS_GET_UNIQUE_MAPPERS.out.filtered_bam_tuple
+        SAMTOOLS_GET_UNIQUE_MAPPERS(star_mapped_bam_tuple)
+        filtered_bam_tuple = SAMTOOLS_GET_UNIQUE_MAPPERS.out.filtered_bam_tuple
         // SAMTOOLS_GET_LOW_DUP_READS(filtered_bam_tuple)
-        // bam_low_dupl_tupl = SAMTOOLS_GET_LOW_DUP_READS.out.bam_low_dupl_tupl
-        FEATURECOUNTS_GENE_CDS(star_mapped_bam_tuple, annotation_gtf_ch)
-        FASTQC_BAM(star_mapped_bam_tuple)
+        // bam_low_dupl_tuple = SAMTOOLS_GET_LOW_DUP_READS.out.bam_low_dupl_tuple
+        FEATURECOUNTS_GENE_CDS(filtered_bam_tuple, annotation_gtf_ch)
+        // --- Gene quant: RNA-SeQC (strict mode, unstranded) ---
+        RNASEQC_COUNT(filtered_bam_tuple, annotation_gtf_ch)
+        FASTQC_BAM(filtered_bam_tuple)
+
+        // ---- MultiQC: build two separate collections ----
+        // FASTQ QC files
+        def fq_zip  = FASTQC_FASTQ.out.zip .map { meta, f -> f }
+        all_fastq_qc = fq_zip.collect()
+
+        // BAM QC files
+        def bam_zip  = FASTQC_BAM.out.zip .map { meta, f -> f }
+        all_bam_qc = bam_zip.collect()
+
+        // Run two MultiQC reports (each runs once after collect() completes)
+        MULTIQC_FASTQ(all_fastq_qc)
+        MULTIQC_BAM(all_bam_qc)
 
     emit:
         star_mapped_bam_tuple

@@ -3,11 +3,11 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - python=3.6.15
+  - python
   - nextflow=23.10.1
   - pip>=20.2.3
   - bedtools=2.26.0
-  - samtools=1.18
+  - samtools
   - stringtie=2.2.1
   - salmon=1.10.2
   - star=2.7.8a
@@ -18,5 +18,7 @@ dependencies:
   - gtfparse
   - zgtf
   - tin-score-calculation
+  - multiqc
+  - subread
   # - pip:
   #   - git+https://github.com/balajtimate/TECtool@master

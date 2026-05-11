@@ -6,7 +6,7 @@ process FASTQC {
     tag { meta.id }
     cpus { params.threads_se }
 
-    publishDir "${params.out_dir}/${meta.id}_results", mode: 'copy', pattern: '*_fastqc.*'
+    publishDir "${params.out_dir}/${meta.id}_results", mode: 'copy', pattern: '*_fastqc.html'
     publishDir "${params.log_dir}/${meta.id}_logs",    mode: 'copy', pattern: '*.inputs.log'
 
     input:
@@ -14,6 +14,7 @@ process FASTQC {
 
     output:
     tuple val(meta), path('*_fastqc.html'), emit: html
+    tuple val(meta), path('*_fastqc.zip'),  emit: zip
 
     script:
     def files = (reads instanceof List) ? reads : [reads]
@@ -35,7 +36,7 @@ process FASTQC_BAM {
     tag { meta.id }
     cpus { params.threads_se }
 
-    publishDir "${params.out_dir}/${meta.id}_results", mode: 'copy', pattern: '*_fastqc.*'
+    publishDir "${params.out_dir}/${meta.id}_results", mode: 'copy', pattern: '*_fastqc.html'
     publishDir "${params.log_dir}/${meta.id}_logs",    mode: 'copy', pattern: '*.inputs.log'
 
     input:
@@ -43,6 +44,7 @@ process FASTQC_BAM {
 
     output:
     tuple val(meta), path('*_fastqc.html'), emit: html
+    tuple val(meta), path('*_fastqc.zip'),  emit: zip
 
     script:
     """
@@ -56,4 +58,44 @@ process FASTQC_BAM {
     # FastQC can read BAM; if your version complains, switch to: samtools fastq "${bam}" | fastqc -o .
     fastqc --threads ${task.cpus} ${bam} --outdir .
     """
+}
+
+process MULTIQC_FASTQ {
+  label 'multiqc'
+  cpus { params.multiqc_cpus ?: 2 }
+  tag { 'multiqc_fastq' }
+
+  publishDir "${params.out_dir}/multiqc_fastq", mode: 'copy', pattern: '*.html'
+
+  input:
+  path(qc_files)   // a List<Path> from collect()
+
+  output:
+  path('multiqc_report.html'), emit: report
+  path('multiqc_data'),        emit: data
+
+  script:
+  """
+  multiqc --force --outdir . .
+  """
+}
+
+process MULTIQC_BAM {
+  label 'multiqc'
+  cpus { params.multiqc_cpus ?: 2 }
+  tag { 'multiqc_bam' }
+
+  publishDir "${params.out_dir}/multiqc_bam", mode: 'copy', pattern: '*.html'
+
+  input:
+  path(qc_files)   // a List<Path> from collect()
+
+  output:
+  path('multiqc_report.html'), emit: report
+  path('multiqc_data'),        emit: data
+
+  script:
+  """
+  multiqc --force --outdir . .
+  """
 }

@@ -162,5 +162,7 @@ cython_debug/
 
 .nextflow*
 work
-results/*
-data/*
+results/
+data/
+analysis/
+CLAUDE.md
